@@ -8,7 +8,7 @@ export const notify = {
   /** 顯示 alert 通知，帶標題與訊息 */
   alert(
     title: Notify["title"],
-    message: Notify["message"],
+    message?: Notify["message"],
     buttons?: Notify["buttons"],
   ): string {
     const id = generateId();

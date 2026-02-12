@@ -45,8 +45,8 @@ export default memo(function Notifier() {
   return (
     <dialog ref={dialogRef} id="notify_dialog" className="modal">
       <div className="modal-box">
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="my-2">{message}</p>
+        {title && <h3 className="text-lg font-semibold">{title}</h3>}
+        {message && <p className="my-2">{message}</p>}
         <div className="modal-action">{renderActions(id, buttons)}</div>
       </div>
     </dialog>

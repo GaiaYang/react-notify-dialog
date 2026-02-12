@@ -22,9 +22,9 @@ export interface NotifyButton {
 /** 通知 */
 export interface Notify {
   /** 通知標題 */
-  title: string;
+  title: string | null;
   /** 通知內容 */
-  message: string;
+  message?: string;
   /** 通知按鈕 */
   buttons?: NotifyButton[];
 }
