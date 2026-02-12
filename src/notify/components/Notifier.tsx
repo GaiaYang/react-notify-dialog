@@ -17,7 +17,7 @@ export default memo(function Notifier() {
   const onTransitionEnd = useCallback<
     React.TransitionEventHandler<HTMLDialogElement>
   >((event) => {
-    if (!event.currentTarget.open && event.propertyName === "opacity") {
+    if (!event.currentTarget.open && event.propertyName === "translate") {
       setCacheNotify((prev) => (prev ? null : prev));
     }
   }, []);
