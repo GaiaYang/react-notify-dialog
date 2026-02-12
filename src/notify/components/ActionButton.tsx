@@ -1,8 +1,10 @@
+import { memo } from "react";
+
 import type { NotifyButtonInternal } from "../types";
 
 import { notify } from "../core/actions";
 
-export default function ActionButton({
+export default memo(function ActionButton({
   id,
   style,
   onClick,
@@ -30,4 +32,4 @@ export default function ActionButton({
     case "default":
       return <button {...commonProps} className="btn btn-primary" />;
   }
-}
+});

@@ -88,6 +88,28 @@ const buttons: {
       ]);
     },
   },
+  {
+    label: "Message + Alert 多重混合",
+    onClick: () => {
+      for (let i = 1; i <= 5; i++) {
+        notify.message(`快速通知 ${i}`);
+      }
+      notify.alert("Alert 標題", "Alert 內容", [
+        {
+          text: "更多通知",
+          onClick() {
+            for (let i = 1; i <= 5; i++) {
+              notify.message(`更多通知 ${i}`);
+            }
+          },
+        },
+        { text: "關閉", style: "cancel" },
+      ]);
+      for (let i = 1; i <= 5; i++) {
+        notify.message(`後續快速通知 ${i}`);
+      }
+    },
+  },
 ];
 
 export default function Demo() {
