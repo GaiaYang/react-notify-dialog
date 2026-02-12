@@ -37,7 +37,7 @@ export default memo(function Notifier() {
       className="modal backdrop-blur-xs"
       onTransitionEnd={onTransitionEnd}
     >
-      <div className="modal-box">
+      <div className="modal-box flex flex-col gap-2">
         {cacheNotify ? renderContent(cacheNotify) : null}
       </div>
     </dialog>
@@ -48,7 +48,7 @@ function renderContent({ id, title, message, buttons }: NotifyInternal) {
   return (
     <>
       {title && <h3 className="text-lg font-semibold">{title}</h3>}
-      {message && <p className="my-2">{message}</p>}
+      {message && <p className="grow text-base">{message}</p>}
       <div className="modal-action">{renderActions(id, buttons)}</div>
     </>
   );

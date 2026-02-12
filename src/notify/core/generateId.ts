@@ -1,6 +1,11 @@
 const regex = /[xy]/g;
 
-export default function generateId() {
+/**
+ * 生成亂數 id
+ *
+ * 來源自 [react-hook-form](https://github.com/react-hook-form/react-hook-form/blob/master/src/logic/generateId.ts)
+ */
+export default function generateId(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
   }
