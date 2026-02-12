@@ -6,7 +6,6 @@ export interface NotifyState {
 
 /** 當前狀態 */
 let state: NotifyState = { notifies: [] };
-
 /** 監聽器列表 */
 const listeners: Array<() => void> = [];
 
@@ -25,10 +24,12 @@ export const store = {
     };
   },
   // 以下為外部函式
+  /** 新增通知 */
   addNotify(notify: NotifyInternal) {
     state = { ...state, notifies: [...state.notifies, notify] };
     emitChange();
   },
+  /** 移除指定通知 */
   removeNotify(notifyId: string) {
     if (!notifyId) return;
     state = {
