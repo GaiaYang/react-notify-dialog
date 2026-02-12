@@ -34,7 +34,7 @@ export default memo(function Notifier() {
     <dialog
       open={hasNotify}
       id="notify_dialog"
-      className="modal backdrop-blur-xs"
+      className="modal backdrop-blur-xs transition-[visibility_0.3s_allow-discrete,background-color_0.3s_ease-out,backdrop-filter_0.3s_ease-out,opacity_0.1s_ease-out]"
       onTransitionEnd={onTransitionEnd}
     >
       <div className="modal-box flex flex-col gap-2">
