@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useEffectEvent, useState } from "react";
+import { memo, useCallback, useState } from "react";
 
 import type { NotifyInternal } from "../types";
 
@@ -17,6 +17,10 @@ export default memo(function Notifier() {
   const notify = notifies.at(-1) ?? null;
   const isOpen = Boolean(notify);
 
+  if (notify && visibleNotify !== notify) {
+    setVisibleNotify(notify);
+  }
+
   const onTransitionEnd = useCallback<
     React.TransitionEventHandler<HTMLDialogElement>
   >((event) => {
@@ -25,21 +29,12 @@ export default memo(function Notifier() {
     }
   }, []);
 
-  const updateVisibleNotify = useEffectEvent((next: NotifyInternal | null) => {
-    if (!next) return;
-    setVisibleNotify(next);
-  });
-
-  useEffect(() => {
-    updateVisibleNotify(notify);
-  }, [notify]);
-
   return (
     <dialog
       open={isOpen}
+      onTransitionEnd={onTransitionEnd}
       id="notify_dialog"
       className="modal backdrop-blur-xs transition-[visibility_0.3s_allow-discrete,background-color_0.3s_ease-out,backdrop-filter_0.3s_ease-out,opacity_0.1s_ease-out]"
-      onTransitionEnd={onTransitionEnd}
     >
       <div className="modal-box flex flex-col gap-2">
         {visibleNotify ? <NotifyContent {...visibleNotify} /> : null}
