@@ -11,42 +11,44 @@ import ActionButton from "./ActionButton";
 
 export default memo(function Notifier() {
   const { notifies } = useStore();
-  const [cacheNotify, setCacheNotify] = useState<NotifyInternal | null>(null);
-  const length = notifies.length;
-  const hasNotify = length > 0;
-  const lastNotify = hasNotify ? notifies[length - 1] : null;
+  const [visibleNotify, setVisibleNotify] = useState<NotifyInternal | null>(
+    null,
+  );
+  const notify = notifies.at(-1) ?? null;
+  const isOpen = Boolean(notify);
 
   const onTransitionEnd = useCallback<
     React.TransitionEventHandler<HTMLDialogElement>
   >((event) => {
-    if (!event.currentTarget.open && event.propertyName === "translate") {
-      setCacheNotify((prev) => (prev ? null : prev));
+    if (!event.currentTarget.open) {
+      setVisibleNotify(null);
     }
   }, []);
 
-  const updateCacheNotify = useEffectEvent(setCacheNotify);
+  const updateVisibleNotify = useEffectEvent((next: NotifyInternal | null) => {
+    if (!next) return;
+    setVisibleNotify(next);
+  });
 
   useEffect(() => {
-    if (lastNotify) {
-      updateCacheNotify(lastNotify);
-    }
-  }, [lastNotify]);
+    updateVisibleNotify(notify);
+  }, [notify]);
 
   return (
     <dialog
-      open={hasNotify}
+      open={isOpen}
       id="notify_dialog"
       className="modal backdrop-blur-xs transition-[visibility_0.3s_allow-discrete,background-color_0.3s_ease-out,backdrop-filter_0.3s_ease-out,opacity_0.1s_ease-out]"
       onTransitionEnd={onTransitionEnd}
     >
       <div className="modal-box flex flex-col gap-2">
-        {cacheNotify ? renderContent(cacheNotify) : null}
+        {visibleNotify ? <NotifyContent {...visibleNotify} /> : null}
       </div>
     </dialog>
   );
 });
 
-function renderContent({ id, title, message, buttons }: NotifyInternal) {
+function NotifyContent({ id, title, message, buttons }: NotifyInternal) {
   return (
     <>
       {title && <h3 className="text-lg font-semibold">{title}</h3>}
