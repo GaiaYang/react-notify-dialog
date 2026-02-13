@@ -4,12 +4,17 @@ import type { NotifyButtonInternal } from "../types";
 
 import { notify } from "../core/actions";
 
+export interface ActionButtonProps extends Omit<NotifyButtonInternal, "id"> {
+  /** 要操作的通知 ID */
+  notifyId: string;
+}
+
 export default memo(function ActionButton({
-  id,
+  notifyId,
   style,
   onClick,
   text,
-}: NotifyButtonInternal) {
+}: ActionButtonProps) {
   const commonProps: React.DetailedHTMLProps<
     React.ButtonHTMLAttributes<HTMLButtonElement>,
     HTMLButtonElement
@@ -17,7 +22,7 @@ export default memo(function ActionButton({
     type: "button",
     onClick(...arg) {
       Promise.resolve(onClick?.(...arg)).then(() => {
-        notify.dismiss(id);
+        notify.dismiss(notifyId);
       });
     },
     children: text,

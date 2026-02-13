@@ -2,7 +2,12 @@ import type { Notify } from "../types";
 
 import { store } from "./store";
 import generateId from "./generateId";
-import { DEFAULT_CLOSE_ID } from "./config";
+import {
+  DEFAULT_TITLE,
+  DEFAULT_CLOSE_ID,
+  DEFAULT_CLOSE_TEXT,
+  DEFAULT_CLOSE_STYLE,
+} from "./config";
 
 export const notify = {
   /** 顯示 alert 通知，帶標題與訊息 */
@@ -31,17 +36,17 @@ export const notify = {
       payload: {
         id,
         message,
-        title: "通知",
+        title: DEFAULT_TITLE,
         buttons: Array.isArray(buttons)
           ? buttons.map((item) => ({ ...item, id: generateId() }))
           : [
               {
                 id: DEFAULT_CLOSE_ID,
-                text: "關閉",
+                text: DEFAULT_CLOSE_TEXT,
                 onClick: () => {
                   notify.dismiss(id);
                 },
-                style: "cancel",
+                style: DEFAULT_CLOSE_STYLE,
               },
             ],
       },

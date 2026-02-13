@@ -5,7 +5,11 @@ import { memo, useCallback, useState } from "react";
 import type { NotifyInternal } from "../types";
 
 import { useStore } from "../core/react";
-import { DEFAULT_CLOSE_ID } from "../core/config";
+import {
+  DEFAULT_CLOSE_ID,
+  DEFAULT_CLOSE_STYLE,
+  DEFAULT_CLOSE_TEXT,
+} from "../core/config";
 
 import ActionButton from "./ActionButton";
 
@@ -63,14 +67,14 @@ function renderActions(
     return (
       <ActionButton
         key={DEFAULT_CLOSE_ID}
-        id={notifyId}
-        text="關閉"
-        style="cancel"
+        text={DEFAULT_CLOSE_TEXT}
+        style={DEFAULT_CLOSE_STYLE}
+        notifyId={notifyId}
       />
     );
   }
 
   return buttons.map((item) => (
-    <ActionButton {...item} key={item.id} id={notifyId} />
+    <ActionButton {...item} key={item.id} notifyId={notifyId} />
   ));
 }
