@@ -2,7 +2,7 @@ import Demo from "./components/Demo";
 
 export default function Home() {
   return (
-    <main className="flex h-dvh w-full items-center">
+    <main className="h-dvh w-full py-10">
       <Demo />
     </main>
   );

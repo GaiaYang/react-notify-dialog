@@ -8,6 +8,11 @@ import { useStore } from "../core/react";
 import { CONFIRM_BUTTON } from "../core/config";
 
 import ActionButton from "./ActionButton";
+import Dialog from "./Dialog";
+import DialogContent from "./DialogContent";
+import DialogTitle from "./DialogTitle";
+import DialogDescription from "./DialogDescription";
+import DialogFooter from "./DialogFooter";
 
 export default memo(function Notifier() {
   const { notifies } = useStore();
@@ -30,25 +35,20 @@ export default memo(function Notifier() {
   }, []);
 
   return (
-    <dialog
-      open={isOpen}
-      onTransitionEnd={onTransitionEnd}
-      id="notify_dialog"
-      className="modal backdrop-blur-xs transition-[visibility_0.3s_allow-discrete,background-color_0.3s_ease-out,backdrop-filter_0.3s_ease-out,opacity_0.1s_ease-out]"
-    >
-      <div className="modal-box flex flex-col gap-2">
-        {visibleNotify ? <NotifyContent {...visibleNotify} /> : null}
-      </div>
-    </dialog>
+    <Dialog open={isOpen} onTransitionEnd={onTransitionEnd}>
+      <DialogContent>
+        {visibleNotify ? renderContent(visibleNotify) : null}
+      </DialogContent>
+    </Dialog>
   );
 });
 
-function NotifyContent({ id, title, message, buttons }: NotifyInternal) {
+function renderContent({ id, title, message, buttons }: NotifyInternal) {
   return (
     <>
-      {title && <h3 className="text-lg font-semibold">{title}</h3>}
-      {message && <p className="grow text-base">{message}</p>}
-      <div className="modal-action">{renderActions(id, buttons)}</div>
+      {title && <DialogTitle>{title}</DialogTitle>}
+      {message && <DialogDescription>{message}</DialogDescription>}
+      <DialogFooter>{renderActions(id, buttons)}</DialogFooter>
     </>
   );
 }

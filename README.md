@@ -4,7 +4,7 @@
 
 此功能組件只有依賴一項 UI library
 
-[Daisy UI](https://daisyui.com/docs/install/) 可以到 `notify/components` 調整組件樣式
+[Daisy UI](https://daisyui.com/docs/install/) 如需要替換 UI 請詳見 [notify/components](./src/notify/components/README.md)
 
 ## 啟動範例專案
 
