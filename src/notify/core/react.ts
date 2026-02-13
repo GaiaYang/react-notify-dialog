@@ -1,4 +1,5 @@
 import {
+  useDebugValue,
   useLayoutEffect,
   useState,
   useSyncExternalStore,
@@ -9,11 +10,14 @@ import { store, type NotifyState } from "./store";
 
 /** React 18+ 使用 useSyncExternalStore */
 function useStoreSync(): NotifyState {
-  return useSyncExternalStore(
+  const state = useSyncExternalStore(
     store.subscribe,
     store.getSnapshot,
     store.getServerSnapshot,
   );
+
+  useDebugValue(state);
+  return state;
 }
 
 /** React 17 及以下使用 useState + useLayoutEffect */
@@ -25,6 +29,7 @@ function useStoreState(): NotifyState {
     return unsubscribe;
   }, []);
 
+  useDebugValue(state);
   return state;
 }
 
