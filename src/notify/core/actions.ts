@@ -43,9 +43,6 @@ export const notify = {
               {
                 id: DEFAULT_CLOSE_ID,
                 text: DEFAULT_CLOSE_TEXT,
-                onClick: () => {
-                  notify.dismiss(id);
-                },
                 style: DEFAULT_CLOSE_STYLE,
               },
             ],
