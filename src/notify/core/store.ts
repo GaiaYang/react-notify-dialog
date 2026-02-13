@@ -4,8 +4,6 @@ export interface NotifyState {
   notifies: NotifyInternal[];
 }
 
-/** 通知列隊 */
-let notifiesMap: Map<string, NotifyInternal> = new Map();
 /** 客戶端狀態，動態更新 */
 let clientState: NotifyState = { notifies: [] };
 /** 伺服器端快取狀態，固定初始值 */
@@ -25,65 +23,63 @@ export type NotifyAction =
 
 /** 統一處理狀態變化 */
 function reducer(
-  currentMap: Map<string, NotifyInternal>,
+  currentArray: NotifyInternal[],
   action: NotifyAction,
-): Map<string, NotifyInternal> {
-  // 只操作副本
-  const newMap = new Map(currentMap);
-
+): NotifyInternal[] {
   switch (action.type) {
     case "ADD": {
       const notify = action.payload;
-      if (notify.id && !newMap.has(notify.id)) {
-        newMap.set(notify.id, notify);
+      if (!notify.id) {
+        return currentArray;
       }
-      break;
+      // 避免重複 id
+      if (currentArray.some((n) => n.id === notify.id)) {
+        return currentArray;
+      }
+      return [...currentArray, notify];
     }
     case "REMOVE": {
       const { id } = action.payload;
-      if (id) {
-        newMap.delete(id);
-      }
-      break;
+      return currentArray.filter((n) => n.id !== id);
     }
     case "UPDATE": {
       const { id, updates } = action.payload;
-      if (newMap.has(id)) {
-        const existing = newMap.get(id)!;
-        newMap.set(id, { ...existing, ...updates });
-      }
-      break;
+      let updated = false;
+      const newArray = currentArray.map((n) => {
+        if (n.id === id) {
+          updated = true;
+          return { ...n, ...updates };
+        }
+        return n;
+      });
+      return updated ? newArray : currentArray;
     }
     case "CLEAR": {
-      newMap.clear();
-      break;
+      return currentArray.length > 0 ? [] : currentArray;
     }
     default:
-      return currentMap;
+      return currentArray;
   }
-
-  return newMap;
 }
 
 export const store = {
   getSnapshot(): NotifyState {
     return clientState;
   },
+
   getServerSnapshot(): NotifyState {
     return serverState;
   },
+
   subscribe(listener: () => void): () => void {
     listeners.add(listener);
     return () => listeners.delete(listener);
   },
-  // 以下為外部函式
-  /** 處理通知行為 */
+
   dispatch(action: NotifyAction) {
-    const newMap = reducer(notifiesMap, action);
-    // 簡單檢查是否有變化，避免無謂更新
-    if (newMap !== notifiesMap) {
-      notifiesMap = newMap;
-      clientState = { notifies: Array.from(newMap.values()) };
+    const newNotifies = reducer(clientState.notifies, action);
+    if (newNotifies !== clientState.notifies) {
+      clientState = { notifies: newNotifies };
       emitChange();
     }
   },
