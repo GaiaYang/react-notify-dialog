@@ -66,24 +66,28 @@ export const store = {
   getSnapshot(): NotifyState {
     return clientState;
   },
-
   getServerSnapshot(): NotifyState {
     return serverState;
   },
-
   subscribe(listener: () => void): () => void {
     listeners.add(listener);
     return () => listeners.delete(listener);
   },
-
   dispatch(action: NotifyAction) {
     const newNotifies = reducer(clientState.notifies, action);
-    if (newNotifies !== clientState.notifies) {
-      clientState = { notifies: newNotifies };
-      emitChange();
-    }
+    updateState({ notifies: newNotifies });
   },
 };
+
+function updateState(nextState: Partial<NotifyState>) {
+  if (!Object.is(clientState, nextState)) {
+    clientState = {
+      ...clientState,
+      ...nextState,
+    };
+    emitChange();
+  }
+}
 
 /** 觸發監聽器 */
 function emitChange() {
