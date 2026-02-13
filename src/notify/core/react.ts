@@ -1,4 +1,9 @@
-import { useEffect, useState, useSyncExternalStore, version } from "react";
+import {
+  useLayoutEffect,
+  useState,
+  useSyncExternalStore,
+  version,
+} from "react";
 
 import { store, type NotifyState } from "./store";
 
@@ -11,11 +16,11 @@ function useStoreSync(): NotifyState {
   );
 }
 
-/** React 17 及以下使用 useState + useEffect */
+/** React 17 及以下使用 useState + useLayoutEffect */
 function useStoreState(): NotifyState {
-  const [state, setState] = useState(store.getSnapshot());
+  const [state, setState] = useState(store.getServerSnapshot());
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const unsubscribe = store.subscribe(() => setState(store.getSnapshot()));
     return unsubscribe;
   }, []);
@@ -24,7 +29,5 @@ function useStoreState(): NotifyState {
 }
 
 /** 獲取儲存的 hook */
-const useStore =
+export const useStore =
   Number(version.split(".")[0]) >= 18 ? useStoreSync : useStoreState;
-
-export default useStore;

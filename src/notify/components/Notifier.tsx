@@ -3,8 +3,10 @@
 import { memo, useCallback, useEffect, useEffectEvent, useState } from "react";
 
 import type { NotifyInternal } from "../types";
-import useStore from "../core/useStore";
-import { DEFAULT_CLOSE_ID } from "../core/actions";
+
+import { useStore } from "../core/react";
+import { DEFAULT_CLOSE_ID } from "../core/config";
+
 import ActionButton from "./ActionButton";
 
 export default memo(function Notifier() {
