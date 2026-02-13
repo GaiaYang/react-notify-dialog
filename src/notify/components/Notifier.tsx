@@ -3,12 +3,12 @@
 import { memo, useCallback, useEffect, useEffectEvent, useState } from "react";
 
 import type { NotifyInternal } from "../types";
-import useNotify from "../core/useNotify";
+import useStore from "../core/useStore";
 import { DEFAULT_CLOSE_ID } from "../core/actions";
 import ActionButton from "./ActionButton";
 
 export default memo(function Notifier() {
-  const { notifies } = useNotify();
+  const { notifies } = useStore();
   const [cacheNotify, setCacheNotify] = useState<NotifyInternal | null>(null);
   const length = notifies.length;
   const hasNotify = length > 0;

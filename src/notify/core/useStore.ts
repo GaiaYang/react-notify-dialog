@@ -3,7 +3,7 @@ import { useEffect, useState, useSyncExternalStore, version } from "react";
 import { store, type NotifyState } from "./store";
 
 /** React 18+ 使用 useSyncExternalStore */
-function useNotifySync(): NotifyState {
+function useStoreSync(): NotifyState {
   return useSyncExternalStore(
     store.subscribe,
     store.getSnapshot,
@@ -12,7 +12,7 @@ function useNotifySync(): NotifyState {
 }
 
 /** React 17 及以下使用 useState + useEffect */
-function useNotifyState(): NotifyState {
+function useStoreState(): NotifyState {
   const [state, setState] = useState(store.getSnapshot());
 
   useEffect(() => {
@@ -23,8 +23,8 @@ function useNotifyState(): NotifyState {
   return state;
 }
 
-/** 通知 hook */
-const useNotify =
-  Number(version.split(".")[0]) >= 18 ? useNotifySync : useNotifyState;
+/** 獲取儲存的 hook */
+const useStore =
+  Number(version.split(".")[0]) >= 18 ? useStoreSync : useStoreState;
 
-export default useNotify;
+export default useStore;
