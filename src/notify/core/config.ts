@@ -1,8 +1,18 @@
+import { NotifyButtonInternal } from "../types";
+
 /** 預設通知標題 */
 export const DEFAULT_TITLE = "通知";
-/** 關閉按鈕的預設 ID */
-export const DEFAULT_CLOSE_ID = "default_close";
-/** 關閉按鈕的預設文字 */
-export const DEFAULT_CLOSE_TEXT = "關閉";
-/** 關閉按鈕的預設樣式 */
-export const DEFAULT_CLOSE_STYLE = "cancel";
+
+type DefaultButton = Required<Omit<NotifyButtonInternal, "onClick">>;
+/** 預設確認按鈕 */
+export const CONFIRM_BUTTON: DefaultButton = {
+  id: "confirm",
+  text: "確定",
+  style: "default",
+};
+/** 預設取消按鈕 */
+export const CANCEL_BUTTON: DefaultButton = {
+  id: "cancel",
+  text: "取消",
+  style: "cancel",
+};

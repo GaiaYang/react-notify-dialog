@@ -5,11 +5,7 @@ import { memo, useCallback, useState } from "react";
 import type { NotifyInternal } from "../types";
 
 import { useStore } from "../core/react";
-import {
-  DEFAULT_CLOSE_ID,
-  DEFAULT_CLOSE_STYLE,
-  DEFAULT_CLOSE_TEXT,
-} from "../core/config";
+import { CONFIRM_BUTTON } from "../core/config";
 
 import ActionButton from "./ActionButton";
 
@@ -66,9 +62,9 @@ function renderActions(
   if (!Array.isArray(buttons) || buttons.length === 0) {
     return (
       <ActionButton
-        key={DEFAULT_CLOSE_ID}
-        text={DEFAULT_CLOSE_TEXT}
-        style={DEFAULT_CLOSE_STYLE}
+        key={CONFIRM_BUTTON.id}
+        text={CONFIRM_BUTTON.text}
+        style={CONFIRM_BUTTON.style}
         notifyId={notifyId}
       />
     );

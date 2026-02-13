@@ -1,13 +1,8 @@
-import type { Notify } from "../types";
+import type { Notify, NotifyButton, NotifyButtonInternal } from "../types";
 
 import { store } from "./store";
 import generateId from "./generateId";
-import {
-  DEFAULT_TITLE,
-  DEFAULT_CLOSE_ID,
-  DEFAULT_CLOSE_TEXT,
-  DEFAULT_CLOSE_STYLE,
-} from "./config";
+import { CONFIRM_BUTTON, CANCEL_BUTTON } from "./config";
 
 export const notify = {
   /** 顯示 alert 通知，帶標題與訊息 */
@@ -23,35 +18,82 @@ export const notify = {
         id,
         title,
         message,
-        buttons: buttons?.map((item) => ({ ...item, id: generateId() })),
+        buttons: attachIdsToButtons(buttons),
       },
     });
     return id;
   },
-  /** 顯示簡單訊息通知，沒有標題 */
-  message(message: Notify["message"], buttons?: Notify["buttons"]): string {
+  /** 顯示簡單訊息通知 */
+  message(message: Notify["message"], title?: Notify["title"]): string {
     const id = generateId();
     store.dispatch({
       type: "ADD",
       payload: {
         id,
+        title: title ?? null,
         message,
-        title: DEFAULT_TITLE,
-        buttons: Array.isArray(buttons)
-          ? buttons.map((item) => ({ ...item, id: generateId() }))
-          : [
-              {
-                id: DEFAULT_CLOSE_ID,
-                text: DEFAULT_CLOSE_TEXT,
-                style: DEFAULT_CLOSE_STYLE,
-              },
-            ],
+        buttons: [CONFIRM_BUTTON],
       },
     });
     return id;
+  },
+  confirm(
+    message: Notify["message"],
+    onConfirm?: NotifyButton["onClick"],
+    onCancel?: NotifyButton["onClick"],
+    title?: Notify["title"],
+  ) {
+    const id = generateId();
+    store.dispatch({
+      type: "ADD",
+      payload: {
+        id,
+        title: title ?? null,
+        message,
+        buttons: [
+          { ...CANCEL_BUTTON, onClick: onCancel },
+          { ...CONFIRM_BUTTON, onClick: onConfirm },
+        ],
+      },
+    });
+    return id;
+  },
+  confirmAsync(message: Notify["message"], title?: Notify["title"]) {
+    const id = generateId();
+    return new Promise<boolean>((resolve) => {
+      store.dispatch({
+        type: "ADD",
+        payload: {
+          id,
+          title: title ?? null,
+          message,
+          buttons: [
+            {
+              ...CANCEL_BUTTON,
+              onClick: () => {
+                resolve(false);
+              },
+            },
+            {
+              ...CONFIRM_BUTTON,
+              onClick: () => {
+                resolve(true);
+              },
+            },
+          ],
+        },
+      });
+    });
   },
   /** 關閉通知 */
   dismiss(id: string) {
     store.dispatch({ type: "REMOVE", payload: { id } });
   },
 };
+
+/** 為按鈕組的物件新增 ID */
+function attachIdsToButtons(
+  buttons?: NotifyButton[],
+): NotifyButtonInternal[] | undefined {
+  return buttons?.map((item) => ({ ...item, id: generateId() }));
+}
