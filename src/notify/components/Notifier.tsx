@@ -4,7 +4,8 @@ import { memo, useCallback, useState } from "react";
 
 import type { NotifyInternal } from "../types";
 
-import { useStore } from "../core/react";
+import { useStoreSelector } from "../core/react";
+import { shallow } from "../core/shallow";
 import { CONFIRM_BUTTON } from "../core/config";
 
 import ActionButton from "./ActionButton";
@@ -15,14 +16,13 @@ import DialogDescription from "./DialogDescription";
 import DialogFooter from "./DialogFooter";
 
 export default memo(function Notifier() {
-  const { notifies } = useStore();
+  const notify = useStoreSelector((state) => state.notifies.at(-1) ?? null);
   const [visibleNotify, setVisibleNotify] = useState<NotifyInternal | null>(
     null,
   );
-  const notify = notifies.at(-1) ?? null;
   const isOpen = Boolean(notify);
 
-  if (notify && visibleNotify !== notify) {
+  if (notify && !shallow(visibleNotify, notify)) {
     setVisibleNotify(notify);
   }
 
