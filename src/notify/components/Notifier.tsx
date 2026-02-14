@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 
 import type { NotifyInternal } from "../types";
 
@@ -16,11 +16,23 @@ import DialogDescription from "./DialogDescription";
 import DialogFooter from "./DialogFooter";
 
 export default memo(function Notifier() {
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const notify = useStoreSelector((state) => state.notifies.at(-1) ?? null);
   const [visibleNotify, setVisibleNotify] = useState<NotifyInternal | null>(
     null,
   );
   const isOpen = Boolean(notify);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (dialog) {
+      if (isOpen) {
+        dialog.showModal();
+      } else {
+        dialog.close();
+      }
+    }
+  }, [isOpen]);
 
   if (notify && !shallow(visibleNotify, notify)) {
     setVisibleNotify(notify);
@@ -35,7 +47,7 @@ export default memo(function Notifier() {
   }, []);
 
   return (
-    <Dialog open={isOpen} onTransitionEnd={onTransitionEnd}>
+    <Dialog ref={dialogRef} onTransitionEnd={onTransitionEnd}>
       <DialogContent>
         {visibleNotify ? renderContent(visibleNotify) : null}
       </DialogContent>
