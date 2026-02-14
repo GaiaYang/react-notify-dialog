@@ -1,5 +1,3 @@
-// [原始碼來源](https://github.com/pmndrs/zustand/blob/main/src/vanilla/shallow.ts)
-
 const isIterable = (obj: object): obj is Iterable<unknown> =>
   Symbol.iterator in obj;
 
@@ -47,6 +45,11 @@ const compareIterables = (
   return !!nextA.done && !!nextB.done;
 };
 
+/**
+ * 淺比較函式
+ *
+ * [原始碼](https://github.com/pmndrs/zustand/blob/main/src/vanilla/shallow.ts)
+ */
 export function shallow<T>(valueA: T, valueB: T): boolean {
   if (Object.is(valueA, valueB)) {
     return true;
