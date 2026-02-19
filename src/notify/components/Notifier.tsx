@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useState } from "react";
 
 import type { NotifyInternal } from "../types";
 
@@ -14,9 +14,14 @@ import DialogContent from "./DialogContent";
 import DialogTitle from "./DialogTitle";
 import DialogDescription from "./DialogDescription";
 import DialogFooter from "./DialogFooter";
+import useDialogObserver from "./useDialogObserver";
 
 export default memo(function Notifier() {
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const { toggle, ref } = useDialogObserver({
+    onClosed() {
+      setVisibleNotify(null);
+    },
+  });
   const notify = useStoreSelector((state) => state.notifies.at(-1) ?? null);
   const [visibleNotify, setVisibleNotify] = useState<NotifyInternal | null>(
     null,
@@ -24,30 +29,15 @@ export default memo(function Notifier() {
   const isOpen = Boolean(notify);
 
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (dialog) {
-      if (isOpen) {
-        dialog.showModal();
-      } else {
-        dialog.close();
-      }
-    }
-  }, [isOpen]);
+    toggle(isOpen);
+  }, [toggle, isOpen]);
 
   if (notify && !shallow(visibleNotify, notify)) {
     setVisibleNotify(notify);
   }
 
-  const onTransitionEnd = useCallback<
-    React.TransitionEventHandler<HTMLDialogElement>
-  >((event) => {
-    if (!event.currentTarget.open) {
-      setVisibleNotify(null);
-    }
-  }, []);
-
   return (
-    <Dialog ref={dialogRef} onTransitionEnd={onTransitionEnd}>
+    <Dialog ref={ref}>
       <DialogContent>
         {visibleNotify ? renderContent(visibleNotify) : null}
       </DialogContent>
