@@ -22,18 +22,24 @@ export default memo(function Notifier() {
       setVisibleNotify(null);
     },
   });
-  const notify = useStoreSelector((state) => state.notifies.at(-1) ?? null);
+  const [notify, hasNotify] = useStoreSelector((state) => [
+    state.notifies.at(-1) ?? null,
+    state.notifies.length > 0,
+  ]);
+  const [prevNotify, setPrevNotify] = useState<NotifyInternal | null>(null);
   const [visibleNotify, setVisibleNotify] = useState<NotifyInternal | null>(
     null,
   );
-  const isOpen = Boolean(notify);
 
   useEffect(() => {
-    toggle(isOpen);
-  }, [toggle, isOpen]);
+    toggle(hasNotify);
+  }, [toggle, hasNotify]);
 
-  if (notify && !shallow(visibleNotify, notify)) {
-    setVisibleNotify(notify);
+  if (!shallow(prevNotify, notify)) {
+    setPrevNotify(notify);
+    if (notify) {
+      setVisibleNotify(notify);
+    }
   }
 
   return (
