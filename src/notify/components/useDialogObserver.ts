@@ -120,28 +120,26 @@ export default function useDialogObserver(
             handleTransitionEnd,
           );
           dialogRef.current = null;
-          setPhase("none");
         }
+
+        setPhase("none");
       }
 
-      if (el) {
-        dialogRef.current = el;
-        setPhase(dialogRef.current.open ? "opened" : "closed");
-
-        const observer = new MutationObserver(handleMutation);
-        observer.observe(dialogRef.current, {
-          attributes: true,
-          attributeFilter: ["open"],
-        });
-        observerRef.current = observer;
-
-        dialogRef.current.addEventListener(
-          "transitionend",
-          handleTransitionEnd,
-        );
-      } else {
+      if (!el) {
         cleanup();
+        return cleanup;
       }
+
+      dialogRef.current = el;
+      setPhase(el.open ? "opened" : "closed");
+
+      observerRef.current = new MutationObserver(handleMutation);
+      observerRef.current.observe(el, {
+        attributes: true,
+        attributeFilter: ["open"],
+      });
+
+      el.addEventListener("transitionend", handleTransitionEnd);
 
       return cleanup;
     },
@@ -155,6 +153,8 @@ export default function useDialogObserver(
 
     const shouldOpen = typeof next === "boolean" ? next : !dialog.open;
 
+    if (shouldOpen === dialog.open) return;
+
     if (shouldOpen) {
       dialog.showModal();
     } else {
@@ -162,13 +162,18 @@ export default function useDialogObserver(
     }
   }, []);
 
+  /** 取得 dialog 當前階段 */
+  const getPhase = useCallback(() => phaseRef.current, []);
+
   return useMemo(
     () => ({
       /** 切換 dialog 開關 */
       toggle,
       /** 綁定 dialog 元素 */
       ref,
+      /** 取得 dialog 當前階段 */
+      getPhase,
     }),
-    [toggle, ref],
+    [toggle, ref, getPhase],
   );
 }

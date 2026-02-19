@@ -5,7 +5,6 @@ import { memo, useEffect, useState } from "react";
 import type { NotifyInternal } from "../types";
 
 import { useStoreSelector } from "../core/react";
-import { shallow } from "../core/shallow";
 import { CONFIRM_BUTTON } from "../core/config";
 
 import ActionButton from "./ActionButton";
@@ -17,30 +16,32 @@ import DialogFooter from "./DialogFooter";
 import useDialogObserver from "./useDialogObserver";
 
 export default memo(function Notifier() {
-  const { toggle, ref } = useDialogObserver({
+  const { toggle, ref, getPhase } = useDialogObserver({
     onClosed() {
       setVisibleNotify(null);
     },
   });
-  const [notify, hasNotify] = useStoreSelector((state) => [
-    state.notifies.at(-1) ?? null,
-    state.notifies.length > 0,
-  ]);
-  const [prevNotify, setPrevNotify] = useState<NotifyInternal | null>(null);
+  const notify = useStoreSelector((state) => state.notifies.at(-1) ?? null);
+  const notifyId = notify?.id;
   const [visibleNotify, setVisibleNotify] = useState<NotifyInternal | null>(
     null,
   );
 
+  // 通知 ID 變化當作判斷依據來確保通知關閉後 dialog 關閉
   useEffect(() => {
-    toggle(hasNotify);
-  }, [toggle, hasNotify]);
-
-  if (!shallow(prevNotify, notify)) {
-    setPrevNotify(notify);
-    if (notify) {
-      setVisibleNotify(notify);
+    const phase = getPhase();
+    if (phase === "opened") {
+      toggle(false);
     }
-  }
+  }, [toggle, getPhase, notifyId]);
+
+  // visibleNotify 被清除後才重新帶入新的通知並重新開啟 dialog
+  useEffect(() => {
+    if (!visibleNotify && notify) {
+      setVisibleNotify(notify);
+      toggle(true);
+    }
+  }, [toggle, visibleNotify, notify]);
 
   return (
     <Dialog ref={ref}>
