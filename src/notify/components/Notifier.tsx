@@ -7,7 +7,7 @@ import type { NotifyInternal } from "../types";
 import { useStoreSelector } from "../core/react";
 import { CONFIRM_BUTTON } from "../core/config";
 
-import useDialogObserver from "./useDialogObserver";
+import useDialogMachine from "./useDialogMachine";
 
 import ActionButton from "./ActionButton";
 import Dialog from "./Dialog";
@@ -17,7 +17,7 @@ import DialogDescription from "./DialogDescription";
 import DialogFooter from "./DialogFooter";
 
 export default memo(function Notifier() {
-  const { toggle, ref, getPhase } = useDialogObserver({
+  const { toggle, ref, getPhase } = useDialogMachine({
     onClosed() {
       setVisibleNotify(null);
     },

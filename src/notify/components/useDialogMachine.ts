@@ -3,16 +3,21 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 /**
  * dialog 的階段
  *
- * - "none": 找不到元素
+ * - "unmounted": 找不到元素
  * - "opening": 開啟中
  * - "opened": 開啟
  * - "closing": 關閉中
  * - "closed": 關閉
  */
-export type DialogPhase = "none" | "opening" | "opened" | "closing" | "closed";
+export type DialogPhase =
+  | "unmounted"
+  | "opening"
+  | "opened"
+  | "closing"
+  | "closed";
 
 /** 監聽器的控制選項 */
-export interface UseDialogObserverOptions {
+export interface UseDialogMachineOptions {
   /** 階段變化時的回調 */
   onPhaseChange?: (phase: DialogPhase) => void;
   /** 開啟時的回調 */
@@ -23,14 +28,18 @@ export interface UseDialogObserverOptions {
   onOpened?: () => void;
   /** 關閉完成時的回調 */
   onClosed?: () => void;
+  /** 掛載時的回調 */
+  onMounted?: () => void;
+  /** 卸載時的回調 */
+  onUnmounted?: () => void;
 }
 
 /**
- * 用於控制 `<dialog />` 事件
+ * 用於控制 `<dialog />` 的狀態機
  *
  * ```ts
   function Component() {
-    const { toggle, ref } = useDialogObserver()
+    const { toggle, ref } = useDialogMachine()
 
     return (
       <dialog ref={ref} className="modal">
@@ -40,11 +49,11 @@ export interface UseDialogObserverOptions {
   }
  * ```
  */
-export default function useDialogObserver(
-  callbacks: UseDialogObserverOptions = {},
+export default function useDialogMachine(
+  callbacks: UseDialogMachineOptions = {},
 ) {
   const callbacksRef = useRef(callbacks);
-  const phaseRef = useRef<DialogPhase>("none");
+  const phaseRef = useRef<DialogPhase>("unmounted");
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const observerRef = useRef<MutationObserver | null>(null);
 
@@ -96,11 +105,19 @@ export default function useDialogObserver(
   );
 
   /** 監控 transitionend */
-  const handleTransitionEnd = useCallback(
+  const handleTransitionFinish = useCallback(
     (event: TransitionEvent) => {
       if (event.target !== event.currentTarget) return;
-      const dialog = event.currentTarget as HTMLDialogElement;
-      setPhase(dialog.open ? "opened" : "closed");
+      switch (phaseRef.current) {
+        case "opening":
+          setPhase("opened");
+          break;
+        case "closing":
+          setPhase("closed");
+          break;
+        default:
+          break;
+      }
     },
     [setPhase],
   );
@@ -117,33 +134,42 @@ export default function useDialogObserver(
         if (dialogRef.current) {
           dialogRef.current.removeEventListener(
             "transitionend",
-            handleTransitionEnd,
+            handleTransitionFinish,
+          );
+          dialogRef.current.removeEventListener(
+            "transitioncancel",
+            handleTransitionFinish,
           );
           dialogRef.current = null;
         }
 
-        setPhase("none");
+        if (phaseRef.current !== "unmounted") {
+          setPhase("unmounted");
+          callbacksRef.current.onUnmounted?.();
+        }
       }
 
-      if (!el) {
+      if (el) {
+        dialogRef.current = el;
+
+        setPhase(el.open ? "opened" : "closed");
+        callbacksRef.current.onMounted?.();
+
+        observerRef.current = new MutationObserver(handleMutation);
+        observerRef.current.observe(el, {
+          attributes: true,
+          attributeFilter: ["open"],
+        });
+
+        el.addEventListener("transitionend", handleTransitionFinish);
+        el.addEventListener("transitioncancel", handleTransitionFinish);
+      } else {
         cleanup();
-        return cleanup;
       }
-
-      dialogRef.current = el;
-      setPhase(el.open ? "opened" : "closed");
-
-      observerRef.current = new MutationObserver(handleMutation);
-      observerRef.current.observe(el, {
-        attributes: true,
-        attributeFilter: ["open"],
-      });
-
-      el.addEventListener("transitionend", handleTransitionEnd);
 
       return cleanup;
     },
-    [handleMutation, handleTransitionEnd, setPhase],
+    [handleMutation, handleTransitionFinish, setPhase],
   );
 
   /** 切換 dialog 開關 */
