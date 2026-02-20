@@ -6,5 +6,5 @@ export type DialogTitleProps = React.DetailedHTMLProps<
 >;
 
 export default function DialogTitle(props: DialogTitleProps) {
-  return <h2 {...props} className="text-lg font-semibold" />;
+  return <h2 {...props} className="text-lg font-semibold has-[+p]:mb-4" />;
 }

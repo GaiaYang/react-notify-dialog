@@ -7,13 +7,14 @@ import type { NotifyInternal } from "../types";
 import { useStoreSelector } from "../core/react";
 import { CONFIRM_BUTTON } from "../core/config";
 
+import useDialogObserver from "./useDialogObserver";
+
 import ActionButton from "./ActionButton";
 import Dialog from "./Dialog";
 import DialogContent from "./DialogContent";
 import DialogTitle from "./DialogTitle";
 import DialogDescription from "./DialogDescription";
 import DialogFooter from "./DialogFooter";
-import useDialogObserver from "./useDialogObserver";
 
 export default memo(function Notifier() {
   const { toggle, ref, getPhase } = useDialogObserver({
@@ -30,7 +31,7 @@ export default memo(function Notifier() {
   // 通知 ID 變化當作判斷依據來確保通知關閉後 dialog 關閉
   useEffect(() => {
     const phase = getPhase();
-    if (phase === "opened") {
+    if (phase === "opened" || phase === "opening") {
       toggle(false);
     }
   }, [toggle, getPhase, notifyId]);

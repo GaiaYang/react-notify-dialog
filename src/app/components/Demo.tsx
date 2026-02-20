@@ -51,13 +51,17 @@ const testOptions: TestOption[] = [
             "是否同意使用者條款",
             () => notify.message("確認"),
             () => notify.message("取消"),
+            "使用者條款",
           );
         },
       },
       {
         label: "confirmAsync",
         onClick: async () => {
-          const res = await notify.confirmAsync("是否同意使用者條款");
+          const res = await notify.confirmAsync(
+            "是否同意使用者條款",
+            "使用者條款",
+          );
           if (res) {
             notify.message("確認");
           } else {

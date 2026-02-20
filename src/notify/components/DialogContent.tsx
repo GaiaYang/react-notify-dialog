@@ -6,5 +6,5 @@ export type DialogContentProps = React.DetailedHTMLProps<
 >;
 
 export default function DialogContent(props: DialogContentProps) {
-  return <div {...props} className="modal-box flex flex-col gap-2" />;
+  return <div {...props} className="modal-box" />;
 }

@@ -6,5 +6,5 @@ export type DialogDescriptionProps = React.DetailedHTMLProps<
 >;
 
 export default function DialogDescription(props: DialogDescriptionProps) {
-  return <p {...props} className="grow text-base" />;
+  return <p {...props} className="text-base" />;
 }
