@@ -2,6 +2,8 @@
 
 一個輕量、無樣式依賴的 React 通知系統，適用於 Next.js 專案。支援簡單通知、完整訊息框、以及同步/非同步確認通知。
 
+因使用 useSyncExternalStore 需要至少 react 18 以上（含），兼容版本請使用 [use-sync-external-store/shim](https://www.npmjs.com/package/use-sync-external-store) 到 `/notify/core/react.ts` 做替換
+
 ## 安裝依賴
 
 此組件僅依賴一個 UI library：
@@ -168,3 +170,8 @@ async () => {
 | 'default'     | 預設樣式 |
 | 'cancel'      | 取消樣式 |
 | 'destructive' | 警示樣式 |
+
+## 已知問題
+
+- 一次多個通知的情況，快速點擊按鈕時會被跳過動畫階段直接到下個通知
+- `ESC` 按鈕會讓通知關閉後再重新跳一次，還在評估實際操作行為應該為何

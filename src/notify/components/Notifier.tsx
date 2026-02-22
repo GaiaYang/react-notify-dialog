@@ -30,22 +30,26 @@ export default memo(function Notifier() {
   const [visibleNotify, setVisibleNotify] = useState<NotifyInternal | null>(
     null,
   );
+  const visibleNotifyId = visibleNotify?.id;
 
   // 通知 ID 變化當作判斷依據來確保通知關閉後 dialog 關閉
   useEffect(() => {
     const phase = getPhase();
-    if (phase === "opened" || phase === "opening") {
+    if (
+      notifyId !== visibleNotifyId &&
+      (phase === "opened" || phase === "opening")
+    ) {
       toggle(false);
     }
-  }, [toggle, getPhase, notifyId]);
+  }, [toggle, getPhase, notifyId, visibleNotifyId]);
 
   // visibleNotify 被清除後才重新帶入新的通知並重新開啟 dialog
   useEffect(() => {
-    if (!visibleNotify && notify) {
+    if (!visibleNotifyId && notify) {
       setVisibleNotify(notify);
       toggle(true);
     }
-  }, [toggle, visibleNotify, notify]);
+  }, [toggle, getPhase, notify, visibleNotifyId]);
 
   return (
     <Dialog ref={ref}>
