@@ -7,7 +7,8 @@ import type { NotifyInternal } from "../types";
 import { useStoreSelector } from "../core/react";
 import { CONFIRM_BUTTON } from "../core/config";
 
-import useDialogMachine from "./useDialogMachine";
+import useDialogMachine from "../hooks/useDialogMachine";
+import useShallow from "../hooks/useShallow";
 
 import ActionButton from "./ActionButton";
 import Dialog from "./Dialog";
@@ -22,7 +23,9 @@ export default memo(function Notifier() {
       setVisibleNotify(null);
     },
   });
-  const notify = useStoreSelector((state) => state.notifies.at(-1) ?? null);
+  const notify = useStoreSelector(
+    useShallow((state) => state.notifies.at(-1) ?? null),
+  );
   const notifyId = notify?.id;
   const [visibleNotify, setVisibleNotify] = useState<NotifyInternal | null>(
     null,

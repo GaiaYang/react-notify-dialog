@@ -3,7 +3,7 @@ const regex = /[xy]/g;
 /**
  * 生成亂數 id
  *
- * 來源自 [react-hook-form](https://github.com/react-hook-form/react-hook-form/blob/master/src/logic/generateId.ts)
+ * [原始碼](https://github.com/react-hook-form/react-hook-form/blob/master/src/logic/generateId.ts)
  */
 export default function generateId(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {

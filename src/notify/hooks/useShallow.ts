@@ -1,6 +1,6 @@
 import { useRef } from "react";
 
-import { shallow } from "./shallow";
+import { shallow } from "../core/shallow";
 
 /**
  * 淺比較 hoook
