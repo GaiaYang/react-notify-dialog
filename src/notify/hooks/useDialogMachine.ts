@@ -56,6 +56,8 @@ export default function useDialogMachine(
   const phaseRef = useRef<DialogPhase>("unmounted");
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const observerRef = useRef<MutationObserver | null>(null);
+  const rafRef = useRef<ReturnType<typeof requestAnimationFrame>>(undefined);
+  const animationIdRef = useRef(0);
 
   // 快取 callbacks 用於靜態使用
   useEffect(() => {
@@ -97,26 +99,26 @@ export default function useDialogMachine(
           mutation.attributeName === "open"
         ) {
           const dialog = mutation.target as HTMLDialogElement;
-          setPhase(dialog.open ? "opening" : "closing");
-        }
-      }
-    },
-    [setPhase],
-  );
+          if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
-  /** 監控 transitionend */
-  const handleTransitionFinish = useCallback(
-    (event: TransitionEvent) => {
-      if (event.target !== event.currentTarget) return;
-      switch (phaseRef.current) {
-        case "opening":
-          setPhase("opened");
-          break;
-        case "closing":
-          setPhase("closed");
-          break;
-        default:
-          break;
+          setPhase(dialog.open ? "opening" : "closing");
+
+          rafRef.current = requestAnimationFrame(() => {
+            const id = ++animationIdRef.current;
+            const animations = dialog.getAnimations();
+
+            if (animations.length === 0) {
+              setPhase(dialog.open ? "opened" : "closed");
+            } else {
+              Promise.allSettled(animations.map((item) => item.finished)).then(
+                () => {
+                  if (animationIdRef.current !== id) return;
+                  setPhase(dialog.open ? "opened" : "closed");
+                },
+              );
+            }
+          });
+        }
       }
     },
     [setPhase],
@@ -132,15 +134,12 @@ export default function useDialogMachine(
         }
 
         if (dialogRef.current) {
-          dialogRef.current.removeEventListener(
-            "transitionend",
-            handleTransitionFinish,
-          );
-          dialogRef.current.removeEventListener(
-            "transitioncancel",
-            handleTransitionFinish,
-          );
           dialogRef.current = null;
+        }
+
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = undefined;
         }
 
         if (phaseRef.current !== "unmounted") {
@@ -160,16 +159,13 @@ export default function useDialogMachine(
           attributes: true,
           attributeFilter: ["open"],
         });
-
-        el.addEventListener("transitionend", handleTransitionFinish);
-        el.addEventListener("transitioncancel", handleTransitionFinish);
       } else {
         cleanup();
       }
 
       return cleanup;
     },
-    [handleMutation, handleTransitionFinish, setPhase],
+    [handleMutation, setPhase],
   );
 
   /** 切換 dialog 開關 */
