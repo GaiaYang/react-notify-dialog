@@ -9,6 +9,7 @@ import { store } from "./store";
 import generateId from "./generateId";
 import { CONFIRM_BUTTON, CANCEL_BUTTON, DEFAULT_NOTIFY } from "./config";
 
+/** 通知 */
 export const notify = {
   /** 顯示 alert 通知，帶標題與訊息 */
   alert(
@@ -44,6 +45,7 @@ export const notify = {
     });
     return id;
   },
+  /** 顯示確認通知 */
   confirm(
     message: Notify["message"],
     onConfirm?: NotifyButton["onClick"],
@@ -65,6 +67,7 @@ export const notify = {
     });
     return id;
   },
+  /** 顯示非同步確認通知 */
   confirmAsync(message: Notify["message"], title?: Notify["title"]) {
     const id = generateId();
     return new Promise<boolean>((resolve) => {
@@ -77,13 +80,13 @@ export const notify = {
           buttons: [
             {
               ...CANCEL_BUTTON,
-              onClick: () => {
+              onClick() {
                 resolve(false);
               },
             },
             {
               ...CONFIRM_BUTTON,
-              onClick: () => {
+              onClick() {
                 resolve(true);
               },
             },
@@ -109,7 +112,7 @@ function createNotify(
       payload.buttons?.map((item) => ({
         ...item,
         id: (item as unknown as NotifyButtonInternal).id || generateId(),
-      })) || DEFAULT_NOTIFY.buttons,
+      })) ?? DEFAULT_NOTIFY.buttons,
     options: { ...DEFAULT_NOTIFY.options, ...payload.options },
   };
 }
