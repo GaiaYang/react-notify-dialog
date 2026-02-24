@@ -44,10 +44,14 @@ export default memo(function Notifier() {
   const onKeyDown = useCallback<React.KeyboardEventHandler<HTMLDialogElement>>(
     (event) => {
       if (event.key === "Escape") {
-        if (!cancelable) {
+        if (store.getSnapshot().isAnimating) {
           event.preventDefault();
-        } else if (notifyId) {
-          store.dispatch({ type: "REMOVE", payload: { id: notifyId } });
+        } else {
+          if (!cancelable) {
+            event.preventDefault();
+          } else if (notifyId) {
+            store.dispatch({ type: "REMOVE", payload: { id: notifyId } });
+          }
         }
       }
     },
