@@ -1,7 +1,13 @@
-import { NotifyButtonInternal } from "../types";
+import { NotifyInternal, NotifyButtonInternal } from "../types";
 
-/** 預設通知標題 */
-export const DEFAULT_TITLE = "通知";
+/** 預設通知參數 */
+export const DEFAULT_NOTIFY = {
+  id: "",
+  title: null,
+  message: "",
+  buttons: [],
+  options: { cancelable: true },
+} satisfies NotifyInternal;
 
 type DefaultButton = Required<Omit<NotifyButtonInternal, "onClick">>;
 /** 預設確認按鈕 */

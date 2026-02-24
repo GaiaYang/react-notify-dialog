@@ -69,6 +69,33 @@ const testOptions: TestOption[] = [
           }
         },
       },
+      {
+        label: "alert can't cancelable",
+        onClick: () => {
+          notify.alert(
+            "title",
+            "message",
+            [
+              {
+                text: "destructive",
+                onClick: () => notify.message("destructive"),
+                style: "destructive",
+              },
+              {
+                text: "cancel",
+                onClick: () => notify.message("cancel"),
+                style: "cancel",
+              },
+              {
+                text: "default",
+                onClick: () => notify.message("default"),
+                style: "default",
+              },
+            ],
+            { cancelable: false },
+          );
+        },
+      },
     ],
   },
   {

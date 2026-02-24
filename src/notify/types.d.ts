@@ -27,6 +27,14 @@ export interface Notify {
   message?: string;
   /** 通知按鈕 */
   buttons?: NotifyButton[];
+  /** 通知選項 */
+  options?: NotifyOptions;
+}
+
+/** 通知選項 */
+export interface NotifyOptions {
+  /** 是否可取消 */
+  cancelable?: boolean;
 }
 
 // 功能內部使用型別

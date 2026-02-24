@@ -1,13 +1,14 @@
 "use client";
 
-import { memo, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 
 import type { NotifyInternal } from "../types";
 
+import { store } from "../core/store";
 import { useStoreSelector } from "../core/react";
 import { CONFIRM_BUTTON } from "../core/config";
 
-import useDialogMachine from "../hooks/useDialogMachine";
+import useDialogMachine, { type DialogPhase } from "../hooks/useDialogMachine";
 import useShallow from "../hooks/useShallow";
 
 import ActionButton from "./ActionButton";
@@ -17,8 +18,15 @@ import DialogTitle from "./DialogTitle";
 import DialogDescription from "./DialogDescription";
 import DialogFooter from "./DialogFooter";
 
+function onPhaseChange(phase: DialogPhase) {
+  store.setState({
+    isAnimating: phase === "opening" || phase === "closing",
+  });
+}
+
 export default memo(function Notifier() {
   const { toggle, ref, getPhase } = useDialogMachine({
+    onPhaseChange,
     onClosed() {
       setVisibleNotify(null);
     },
@@ -27,10 +35,24 @@ export default memo(function Notifier() {
     useShallow((state) => state.notifies.at(-1) ?? null),
   );
   const notifyId = notify?.id;
+  const cancelable = notify?.options?.cancelable;
   const [visibleNotify, setVisibleNotify] = useState<NotifyInternal | null>(
     null,
   );
   const visibleNotifyId = visibleNotify?.id;
+
+  const onKeyDown = useCallback<React.KeyboardEventHandler<HTMLDialogElement>>(
+    (event) => {
+      if (event.key === "Escape") {
+        if (!cancelable) {
+          event.preventDefault();
+        } else if (notifyId) {
+          store.dispatch({ type: "REMOVE", payload: { id: notifyId } });
+        }
+      }
+    },
+    [notifyId, cancelable],
+  );
 
   // 通知 ID 變化當作判斷依據來確保通知關閉後 dialog 關閉
   useEffect(() => {
@@ -52,7 +74,7 @@ export default memo(function Notifier() {
   }, [toggle, getPhase, notify, visibleNotifyId]);
 
   return (
-    <Dialog ref={ref}>
+    <Dialog ref={ref} onKeyDown={onKeyDown}>
       <DialogContent>
         {visibleNotify ? renderContent(visibleNotify) : null}
       </DialogContent>
@@ -65,29 +87,40 @@ function renderContent({ id, title, message, buttons }: NotifyInternal) {
     <>
       {title && <DialogTitle>{title}</DialogTitle>}
       {message && <DialogDescription>{message}</DialogDescription>}
-      <DialogFooter>{renderActions(id, buttons)}</DialogFooter>
+      <DialogFooter>
+        {id ? <Actions id={id} buttons={buttons} /> : null}
+      </DialogFooter>
     </>
   );
 }
 
-function renderActions(
-  notifyId: string | undefined,
-  buttons: NotifyInternal["buttons"],
-) {
-  if (!notifyId) return null;
+const Actions = memo(function Actions({
+  id,
+  buttons,
+}: Pick<NotifyInternal, "id" | "buttons">) {
+  const isAnimating = useStoreSelector(
+    useCallback((state) => state.isAnimating, []),
+  );
 
   if (!Array.isArray(buttons) || buttons.length === 0) {
     return (
       <ActionButton
         key={CONFIRM_BUTTON.id}
+        id={CONFIRM_BUTTON.id}
         text={CONFIRM_BUTTON.text}
         style={CONFIRM_BUTTON.style}
-        notifyId={notifyId}
+        notifyId={id}
+        disabled={isAnimating}
       />
     );
   }
 
   return buttons.map((item) => (
-    <ActionButton {...item} key={item.id} notifyId={notifyId} />
+    <ActionButton
+      {...item}
+      key={item.id}
+      notifyId={id}
+      disabled={isAnimating}
+    />
   ));
-}
+});

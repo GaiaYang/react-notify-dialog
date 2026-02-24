@@ -2,13 +2,19 @@ import type { NotifyInternal } from "../types";
 import { shallow } from "./shallow";
 
 export interface NotifyState {
+  /** 通知列隊 */
   notifies: NotifyInternal[];
+  /** dialog 是否正在動畫中 */
+  isAnimating: boolean;
 }
 
 /** 客戶端狀態，動態更新 */
-let state: NotifyState = { notifies: [] };
+let state: NotifyState = { notifies: [], isAnimating: false };
 /** 伺服器端快取狀態，固定初始值 */
-const initialState: Readonly<NotifyState> = { notifies: [] };
+const initialState: Readonly<NotifyState> = {
+  notifies: [],
+  isAnimating: false,
+};
 /** 監聽器列表 */
 const listeners: Set<() => void> = new Set();
 
@@ -23,33 +29,36 @@ export type NotifyAction =
   | { type: "CLEAR" };
 
 /** 統一處理狀態變化 */
-function reducer(
-  currentArray: NotifyInternal[],
-  action: NotifyAction,
-): NotifyInternal[] {
+function reducer(state: NotifyState, action: NotifyAction): NotifyState {
+  const nextState = { ...state };
+
   switch (action.type) {
     case "ADD": {
       const notify = action.payload;
-      if (!notify.id) return currentArray;
-      if (currentArray.some((n) => n.id === notify.id)) return currentArray;
-      return [...currentArray, notify];
+      if (!notify.id || state.notifies.some((n) => n.id === notify.id)) {
+        nextState.notifies = state.notifies;
+        break;
+      }
+      nextState.notifies = [...state.notifies, notify];
+      break;
     }
     case "REMOVE": {
       const { id } = action.payload;
       const newArray: NotifyInternal[] = [];
       let found = false;
-      for (const item of currentArray) {
+      for (const item of state.notifies) {
         if (item.id === id) {
           found = true;
           continue;
         }
         newArray.push(item);
       }
-      return found ? newArray : currentArray;
+      nextState.notifies = found ? newArray : state.notifies;
+      break;
     }
     case "UPDATE": {
       const { id, update } = action.payload;
-      const newArray = currentArray.slice();
+      const newArray = state.notifies.slice();
       let updated = false;
       for (let i = 0; i < newArray.length; i++) {
         const item = newArray[i];
@@ -62,14 +71,18 @@ function reducer(
           break;
         }
       }
-      return updated ? newArray : currentArray;
+      nextState.notifies = updated ? newArray : state.notifies;
+      break;
     }
     case "CLEAR": {
-      return currentArray.length > 0 ? [] : currentArray;
+      nextState.notifies = state.notifies.length > 0 ? [] : state.notifies;
+      break;
     }
     default:
-      return currentArray;
+      break;
   }
+
+  return nextState;
 }
 
 export const store = {
@@ -83,18 +96,33 @@ export const store = {
     listeners.add(listener);
     return () => listeners.delete(listener);
   },
+  // 外部用函式
+  /** 更新通知 */
   dispatch(action: NotifyAction) {
-    const newNotifies = reducer(state.notifies, action);
-    updateState({ notifies: newNotifies });
+    updateState(reducer(state, action));
+  },
+  /** 更新狀態 */
+  setState(
+    partial:
+      | Partial<NotifyState>
+      | ((prev: Partial<NotifyState>) => NotifyState),
+  ) {
+    const nextState =
+      typeof partial === "function"
+        ? (partial as (state: NotifyState) => NotifyState)(state)
+        : partial;
+    updateState(nextState);
   },
 };
 
 function updateState(nextState: Partial<NotifyState>) {
-  state = {
-    ...state,
-    ...nextState,
-  };
-  emitChange();
+  if (!Object.is(nextState, state)) {
+    state = {
+      ...state,
+      ...nextState,
+    };
+    emitChange();
+  }
 }
 
 /** 觸發監聽器 */
