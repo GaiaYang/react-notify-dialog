@@ -109,10 +109,8 @@ const Actions = memo(function Actions({
   if (!Array.isArray(buttons) || buttons.length === 0) {
     return (
       <ActionButton
+        {...CONFIRM_BUTTON}
         key={CONFIRM_BUTTON.id}
-        id={CONFIRM_BUTTON.id}
-        text={CONFIRM_BUTTON.text}
-        style={CONFIRM_BUTTON.style}
         notifyId={id}
         disabled={isAnimating}
       />
