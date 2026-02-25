@@ -88,13 +88,21 @@ notify.message("通知內容", "通知標題");
 完整通知，可自訂標題、訊息、按鈕。
 
 ```ts
-notify.alert(title: string | null, message?: string, buttons?: NotifyButton[]);
+notify.alert(
+  title: string | null,
+  message?: string,
+  buttons?: NotifyButton[],
+  options?: NotifyOptions
+);
 ```
 
 ```ts
-notify.alert("通知標題", "通知內容", [
-  { text: "下一個通知", onClick: () => {} },
-]);
+notify.alert(
+  "通知標題",
+  "通知內容",
+  [{ text: "下一個通知", onClick: () => {} }],
+  { cancelable: false },
+);
 ```
 
 | 名稱    | 型別                              | 說明                             |
@@ -102,6 +110,7 @@ notify.alert("通知標題", "通知內容", [
 | title   | `string \| null`                  | 標題，傳空字串或 `null` 隱藏標題 |
 | message | `string`                          | 訊息內容                         |
 | buttons | [`NotifyButton[]`](#notifybutton) | 按鈕配置陣列                     |
+| options | [`NotifyOptions`](#notifyoptions) | 通知的其他設定                   |
 
 ### `confirm()`
 
@@ -171,7 +180,12 @@ async () => {
 | 'cancel'      | 取消樣式 |
 | 'destructive' | 警示樣式 |
 
+### NotifyOptions
+
+| 名稱       | 型別      | 說明       |
+| ---------- | --------- | ---------- |
+| cancelable | `boolean` | 是否可取消 |
+
 ## 已知問題
 
-- 一次多個通知的情況，快速點擊按鈕時會被跳過動畫階段直接到下個通知
-- `ESC` 按鈕會讓通知關閉後再重新跳一次，還在評估實際操作行為應該為何
+- 暫無
