@@ -4,9 +4,9 @@ import { memo, useCallback, useEffect, useState } from "react";
 
 import type { NotifyInternal } from "../types";
 
-import { store } from "../core/store";
-import { useStoreSelector } from "../core/react";
-import { CONFIRM_BUTTON } from "../core/constants";
+import { CONFIRM_BUTTON } from "../constants";
+import { store } from "../store";
+import { useStoreSelector } from "../react";
 
 import useDialogMachine, { type DialogPhase } from "../hooks/useDialogMachine";
 import useShallow from "../hooks/useShallow";

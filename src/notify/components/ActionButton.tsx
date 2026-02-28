@@ -1,6 +1,6 @@
 import type { NotifyButtonInternal } from "../types";
 
-import { notify } from "../core/actions";
+import { notify } from "../actions";
 import DialogButton, { type DialogButtonProps } from "./DialogButton";
 
 export interface ActionButtonProps

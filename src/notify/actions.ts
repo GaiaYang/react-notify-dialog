@@ -3,11 +3,11 @@ import type {
   NotifyButton,
   NotifyButtonInternal,
   NotifyInternal,
-} from "../types";
+} from "./types";
 
 import { store } from "./store";
 import { CONFIRM_BUTTON, CANCEL_BUTTON, DEFAULT_NOTIFY } from "./constants";
-import generateId from "../utils/generateId";
+import generateId from "./utils/generateId";
 
 /** 通知 */
 export const notify = {
