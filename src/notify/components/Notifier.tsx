@@ -6,7 +6,7 @@ import type { NotifyInternal } from "../types";
 
 import { store } from "../core/store";
 import { useStoreSelector } from "../core/react";
-import { CONFIRM_BUTTON } from "../core/config";
+import { CONFIRM_BUTTON } from "../core/constants";
 
 import useDialogMachine, { type DialogPhase } from "../hooks/useDialogMachine";
 import useShallow from "../hooks/useShallow";

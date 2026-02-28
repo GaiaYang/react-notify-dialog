@@ -6,8 +6,8 @@ import type {
 } from "../types";
 
 import { store } from "./store";
-import generateId from "./generateId";
-import { CONFIRM_BUTTON, CANCEL_BUTTON, DEFAULT_NOTIFY } from "./config";
+import { CONFIRM_BUTTON, CANCEL_BUTTON, DEFAULT_NOTIFY } from "./constants";
+import generateId from "../utils/generateId";
 
 /** 通知 */
 export const notify = {

@@ -1,5 +1,5 @@
 import type { NotifyInternal } from "../types";
-import { shallow } from "./shallow";
+import { shallow } from "../utils/shallow";
 
 export interface NotifyState {
   /** 通知列隊 */

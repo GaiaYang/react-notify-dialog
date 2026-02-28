@@ -1,4 +1,4 @@
-import { NotifyInternal, NotifyButtonInternal } from "../types";
+import type { NotifyInternal, NotifyButtonInternal } from "../types";
 
 /** 預設通知參數 */
 export const DEFAULT_NOTIFY = {
