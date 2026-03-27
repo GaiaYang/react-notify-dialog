@@ -3,11 +3,11 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 /**
  * dialog 的階段
  *
- * - "unmounted": 找不到元素
- * - "opening": 開啟中
- * - "opened": 開啟
- * - "closing": 關閉中
- * - "closed": 關閉
+ * - `"unmounted"`: 找不到元素
+ * - `"opening"`: 開啟中
+ * - `"opened"`: 開啟
+ * - `"closing"`: 關閉中
+ * - `"closed"`: 關閉
  */
 export type DialogPhase =
   | "unmounted"
@@ -37,13 +37,12 @@ export interface UseDialogMachineOptions {
 /**
  * 用於控制 `<dialog />` 的狀態機
  *
- * ```ts
+ * ```tsx
   function Component() {
     const { toggle, ref } = useDialogMachine()
 
     return (
-      <dialog ref={ref} className="modal">
-        <div className="modal-box"></div>
+      <dialog ref={ref}>
       </dialog>
     ) 
   }
@@ -130,35 +129,38 @@ export default function useDialogMachine(
     [setPhase],
   );
 
+  /** 卸載所有監聽器以及元素 */
+  const onClean = useCallback(() => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+
+    if (dialogRef.current) {
+      dialogRef.current = null;
+    }
+
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+
+    if (phaseRef.current !== "unmounted") {
+      setPhase("unmounted");
+      callbacksRef.current.onUnmounted?.();
+    }
+  }, [setPhase]);
+
+  useEffect(() => {
+    return onClean;
+  }, [onClean]);
+
   /** 綁定 dialog 元素 */
   const ref = useCallback(
     (element: HTMLDialogElement | null) => {
-      const onClean = () => {
-        if (observerRef.current) {
-          observerRef.current.disconnect();
-          observerRef.current = null;
-        }
+      onClean();
 
-        if (dialogRef.current) {
-          dialogRef.current = null;
-        }
-
-        if (rafRef.current) {
-          cancelAnimationFrame(rafRef.current);
-          rafRef.current = null;
-        }
-
-        if (phaseRef.current !== "unmounted") {
-          setPhase("unmounted");
-          callbacksRef.current.onUnmounted?.();
-        }
-      };
-
-      if (element) {
-        if (dialogRef.current && dialogRef.current !== element) {
-          onClean();
-        }
-
+      if (element instanceof HTMLDialogElement) {
         dialogRef.current = element;
 
         setPhase(element.open ? "opened" : "closed");
@@ -169,11 +171,9 @@ export default function useDialogMachine(
           attributes: true,
           attributeFilter: ["open"],
         });
-      } else {
-        onClean();
       }
     },
-    [handleMutation, setPhase],
+    [handleMutation, setPhase, onClean],
   );
 
   /** 切換 dialog 開關 */
