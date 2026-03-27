@@ -56,7 +56,7 @@ export default function useDialogMachine(
   const phaseRef = useRef<DialogPhase>("unmounted");
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const observerRef = useRef<MutationObserver | null>(null);
-  const rafRef = useRef<ReturnType<typeof requestAnimationFrame>>(undefined);
+  const rafRef = useRef<ReturnType<typeof requestAnimationFrame>>(null);
   const animationIdRef = useRef(0);
 
   // 快取 callbacks 用於靜態使用
@@ -99,24 +99,30 @@ export default function useDialogMachine(
           mutation.attributeName === "open"
         ) {
           const dialog = mutation.target as HTMLDialogElement;
+
           if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
           setPhase(dialog.open ? "opening" : "closing");
 
+          // 第一幀 rAF 等待 layout
           rafRef.current = requestAnimationFrame(() => {
             const id = ++animationIdRef.current;
-            const animations = dialog.getAnimations();
 
-            if (animations.length === 0) {
-              setPhase(dialog.open ? "opened" : "closed");
-            } else {
-              Promise.allSettled(animations.map((item) => item.finished)).then(
-                () => {
+            // 第二幀 rAF 等待 CSS animation/transition 建立
+            rafRef.current = requestAnimationFrame(() => {
+              const animations = dialog.getAnimations();
+
+              if (animations.length === 0) {
+                setPhase(dialog.open ? "opened" : "closed");
+              } else {
+                Promise.allSettled(
+                  animations.map((item) => item.finished),
+                ).then(() => {
                   if (animationIdRef.current !== id) return;
                   setPhase(dialog.open ? "opened" : "closed");
-                },
-              );
-            }
+                });
+              }
+            });
           });
         }
       }
@@ -124,48 +130,56 @@ export default function useDialogMachine(
     [setPhase],
   );
 
-  /** 綁定 dialog 元素 */
-  const ref = useCallback(
-    (el: HTMLDialogElement | null) => {
-      function cleanup() {
-        if (observerRef.current) {
-          observerRef.current.disconnect();
-          observerRef.current = null;
-        }
+  const onClean = useCallback(() => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
 
-        if (dialogRef.current) {
-          dialogRef.current = null;
-        }
+    if (dialogRef.current) {
+      dialogRef.current = null;
+    }
 
-        if (rafRef.current) {
-          cancelAnimationFrame(rafRef.current);
-          rafRef.current = undefined;
-        }
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
 
-        if (phaseRef.current !== "unmounted") {
-          setPhase("unmounted");
-          callbacksRef.current.onUnmounted?.();
-        }
-      }
+    if (phaseRef.current !== "unmounted") {
+      setPhase("unmounted");
+      callbacksRef.current.onUnmounted?.();
+    }
+  }, [setPhase]);
 
-      if (el) {
-        dialogRef.current = el;
+  const onMount = useCallback(
+    (element: HTMLDialogElement) => {
+      dialogRef.current = element;
 
-        setPhase(el.open ? "opened" : "closed");
-        callbacksRef.current.onMounted?.();
+      setPhase(element.hasAttribute("open") ? "opened" : "closed");
+      callbacksRef.current.onMounted?.();
 
-        observerRef.current = new MutationObserver(handleMutation);
-        observerRef.current.observe(el, {
-          attributes: true,
-          attributeFilter: ["open"],
-        });
-      } else {
-        cleanup();
-      }
-
-      return cleanup;
+      observerRef.current = new MutationObserver(handleMutation);
+      observerRef.current.observe(element, {
+        attributes: true,
+        attributeFilter: ["open"],
+      });
     },
     [handleMutation, setPhase],
+  );
+
+  /** 綁定 dialog 元素 */
+  const ref = useCallback(
+    (element: HTMLDialogElement | null) => {
+      if (element) {
+        if (dialogRef.current && dialogRef.current !== element) {
+          onClean();
+        }
+        onMount(element);
+      } else {
+        onClean();
+      }
+    },
+    [onMount, onClean],
   );
 
   /** 切換 dialog 開關 */
