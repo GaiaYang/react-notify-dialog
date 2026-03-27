@@ -1,7 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useState } from "react";
-
+import { memo, useCallback, useState } from "react";
 import type { NotifyInternal } from "../types";
 
 import { CONFIRM_BUTTON } from "../constants";
@@ -19,110 +18,92 @@ import DialogDescription from "./DialogDescription";
 import DialogFooter from "./DialogFooter";
 
 function onPhaseChange(phase: DialogPhase) {
-  store.setState({
-    isAnimating: phase === "opening" || phase === "closing",
-  });
+  store.setState({ isAnimating: phase === "opening" || phase === "closing" });
 }
 
 export default memo(function Notifier() {
+  const isAnimating = useStoreSelector((state) => state.isAnimating);
+  const notify = useStoreSelector(
+    useShallow((state) => state.notifies.at(-1) ?? null),
+  );
+  const notifyId = notify?.id;
+  const cancelable = notify?.options?.cancelable;
+
+  const [visibleNotify, setVisibleNotify] = useState<NotifyInternal | null>(
+    null,
+  );
+  const visibleNotifyId = visibleNotify?.id;
+
   const { toggle, ref, getPhase } = useDialogMachine({
     onPhaseChange,
     onClosed() {
       setVisibleNotify(null);
     },
   });
-  const notify = useStoreSelector(
-    useShallow((state) => state.notifies.at(-1) ?? null),
-  );
-  const notifyId = notify?.id;
-  const cancelable = notify?.options?.cancelable;
-  const [visibleNotify, setVisibleNotify] = useState<NotifyInternal | null>(
-    null,
-  );
-  const visibleNotifyId = visibleNotify?.id;
 
-  const onKeyDown = useCallback<React.KeyboardEventHandler<HTMLDialogElement>>(
+  const onKeyDown: React.KeyboardEventHandler<HTMLDialogElement> = useCallback(
     (event) => {
-      if (event.key === "Escape") {
-        if (store.getSnapshot().isAnimating) {
-          event.preventDefault();
-        } else {
-          if (!cancelable) {
-            event.preventDefault();
-          } else if (notifyId) {
-            store.dispatch({ type: "REMOVE", payload: { id: notifyId } });
-          }
-        }
+      if (event.key !== "Escape") return;
+
+      if (isAnimating || !cancelable) {
+        event.preventDefault();
+        return;
+      }
+
+      if (notifyId) {
+        store.dispatch({ type: "REMOVE", payload: { id: notifyId } });
       }
     },
-    [notifyId, cancelable],
+    [notifyId, cancelable, isAnimating],
   );
 
-  // 通知 ID 變化當作判斷依據來確保通知關閉後 dialog 關閉
-  useEffect(() => {
+  if (!visibleNotify && notify) {
+    // visibleNotify 清空後才設定新通知並開啟 dialog
+    setVisibleNotify(notify);
+    toggle(true);
+  } else if (notifyId !== visibleNotifyId) {
+    // 當通知 ID 變化且 dialog 開啟中，先關閉舊通知
     const phase = getPhase();
-    if (
-      notifyId !== visibleNotifyId &&
-      (phase === "opened" || phase === "opening")
-    ) {
+    if (phase === "opened" || phase === "opening") {
       toggle(false);
     }
-  }, [toggle, getPhase, notifyId, visibleNotifyId]);
+  }
 
-  // visibleNotify 被清除後才重新帶入新的通知並重新開啟 dialog
-  useEffect(() => {
-    if (!visibleNotifyId && notify) {
-      setVisibleNotify(notify);
-      toggle(true);
-    }
-  }, [toggle, getPhase, notify, visibleNotifyId]);
+  function renderContent() {
+    if (!visibleNotify) return null;
 
-  return (
-    <Dialog ref={ref} onKeyDown={onKeyDown}>
-      <DialogContent>
-        {visibleNotify ? renderContent(visibleNotify) : null}
-      </DialogContent>
-    </Dialog>
-  );
-});
+    const { id, title, message, buttons } = visibleNotify;
 
-function renderContent({ id, title, message, buttons }: NotifyInternal) {
-  return (
-    <>
-      {title && <DialogTitle>{title}</DialogTitle>}
-      {message && <DialogDescription>{message}</DialogDescription>}
-      <DialogFooter>
-        {id ? <Actions id={id} buttons={buttons} /> : null}
-      </DialogFooter>
-    </>
-  );
-}
-
-const Actions = memo(function Actions({
-  id,
-  buttons,
-}: Pick<NotifyInternal, "id" | "buttons">) {
-  const isAnimating = useStoreSelector(
-    useCallback((state) => state.isAnimating, []),
-  );
-
-  if (!Array.isArray(buttons) || buttons.length === 0) {
     return (
-      <ActionButton
-        {...CONFIRM_BUTTON}
-        key={CONFIRM_BUTTON.id}
-        notifyId={id}
-        disabled={isAnimating}
-      />
+      <>
+        {title && <DialogTitle>{title}</DialogTitle>}
+        {message && <DialogDescription>{message}</DialogDescription>}
+        <DialogFooter>
+          {!Array.isArray(buttons) || buttons.length === 0 ? (
+            <ActionButton
+              {...CONFIRM_BUTTON}
+              key={CONFIRM_BUTTON.id}
+              notifyId={id}
+              disabled={isAnimating}
+            />
+          ) : (
+            buttons.map((item) => (
+              <ActionButton
+                {...item}
+                key={item.id}
+                notifyId={id}
+                disabled={isAnimating}
+              />
+            ))
+          )}
+        </DialogFooter>
+      </>
     );
   }
 
-  return buttons.map((item) => (
-    <ActionButton
-      {...item}
-      key={item.id}
-      notifyId={id}
-      disabled={isAnimating}
-    />
-  ));
+  return (
+    <Dialog ref={ref} onKeyDown={onKeyDown}>
+      <DialogContent>{renderContent()}</DialogContent>
+    </Dialog>
+  );
 });
