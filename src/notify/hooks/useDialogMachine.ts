@@ -130,56 +130,50 @@ export default function useDialogMachine(
     [setPhase],
   );
 
-  const onClean = useCallback(() => {
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-      observerRef.current = null;
-    }
-
-    if (dialogRef.current) {
-      dialogRef.current = null;
-    }
-
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-
-    if (phaseRef.current !== "unmounted") {
-      setPhase("unmounted");
-      callbacksRef.current.onUnmounted?.();
-    }
-  }, [setPhase]);
-
-  const onMount = useCallback(
-    (element: HTMLDialogElement) => {
-      dialogRef.current = element;
-
-      setPhase(element.hasAttribute("open") ? "opened" : "closed");
-      callbacksRef.current.onMounted?.();
-
-      observerRef.current = new MutationObserver(handleMutation);
-      observerRef.current.observe(element, {
-        attributes: true,
-        attributeFilter: ["open"],
-      });
-    },
-    [handleMutation, setPhase],
-  );
-
   /** 綁定 dialog 元素 */
   const ref = useCallback(
     (element: HTMLDialogElement | null) => {
+      const onClean = () => {
+        if (observerRef.current) {
+          observerRef.current.disconnect();
+          observerRef.current = null;
+        }
+
+        if (dialogRef.current) {
+          dialogRef.current = null;
+        }
+
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
+
+        if (phaseRef.current !== "unmounted") {
+          setPhase("unmounted");
+          callbacksRef.current.onUnmounted?.();
+        }
+      };
+
       if (element) {
         if (dialogRef.current && dialogRef.current !== element) {
           onClean();
         }
-        onMount(element);
+
+        dialogRef.current = element;
+
+        setPhase(element.open ? "opened" : "closed");
+        callbacksRef.current.onMounted?.();
+
+        observerRef.current = new MutationObserver(handleMutation);
+        observerRef.current.observe(element, {
+          attributes: true,
+          attributeFilter: ["open"],
+        });
       } else {
         onClean();
       }
     },
-    [onMount, onClean],
+    [handleMutation, setPhase],
   );
 
   /** 切換 dialog 開關 */
