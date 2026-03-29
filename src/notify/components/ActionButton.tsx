@@ -1,10 +1,12 @@
+import { useCallback } from "react";
+
 import type { NotifyButtonInternal } from "../types";
-
 import { notify } from "../actions";
-import DialogButton, { type DialogButtonProps } from "./DialogButton";
+import { useStoreSelector } from "../react";
 
-export interface ActionButtonProps
-  extends NotifyButtonInternal, Pick<DialogButtonProps, "disabled"> {
+import DialogButton from "./DialogButton";
+
+export interface ActionButtonProps extends NotifyButtonInternal {
   /** 要操作的通知 ID */
   notifyId: string;
 }
@@ -16,8 +18,11 @@ export default function ActionButton({
   style,
   onClick,
   text,
-  disabled,
 }: ActionButtonProps) {
+  const isAnimating = useStoreSelector(
+    useCallback((state) => state.isAnimating, []),
+  );
+
   return (
     <DialogButton
       id={id}
@@ -28,7 +33,7 @@ export default function ActionButton({
           notify.dismiss(notifyId);
         });
       }}
-      disabled={disabled}
+      disabled={isAnimating}
     >
       {text}
     </DialogButton>

@@ -22,7 +22,6 @@ function onPhaseChange(phase: DialogPhase) {
 }
 
 export default memo(function Notifier() {
-  const isAnimating = useStoreSelector((state) => state.isAnimating);
   const notify = useStoreSelector(
     useShallow((state) => state.notifies.at(-1) ?? null),
   );
@@ -45,6 +44,8 @@ export default memo(function Notifier() {
     (event) => {
       if (event.key !== "Escape") return;
 
+      const isAnimating = store.getSnapshot().isAnimating;
+
       if (isAnimating || !cancelable) {
         event.preventDefault();
         return;
@@ -54,7 +55,7 @@ export default memo(function Notifier() {
         store.dispatch({ type: "REMOVE", payload: { id: notifyId } });
       }
     },
-    [notifyId, cancelable, isAnimating],
+    [notifyId, cancelable],
   );
 
   if (!visibleNotify && notify) {
@@ -84,16 +85,10 @@ export default memo(function Notifier() {
               {...CONFIRM_BUTTON}
               key={CONFIRM_BUTTON.id}
               notifyId={id}
-              disabled={isAnimating}
             />
           ) : (
             buttons.map((item) => (
-              <ActionButton
-                {...item}
-                key={item.id}
-                notifyId={id}
-                disabled={isAnimating}
-              />
+              <ActionButton {...item} key={item.id} notifyId={id} />
             ))
           )}
         </DialogFooter>

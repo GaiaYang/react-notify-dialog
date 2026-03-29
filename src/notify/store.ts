@@ -37,9 +37,9 @@ function reducer(state: NotifyState, action: NotifyAction): NotifyState {
       const notify = action.payload;
       if (!notify.id || state.notifies.some((n) => n.id === notify.id)) {
         nextState.notifies = state.notifies;
-        break;
+      } else {
+        nextState.notifies = [...state.notifies, notify];
       }
-      nextState.notifies = [...state.notifies, notify];
       break;
     }
     case "REMOVE": {

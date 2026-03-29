@@ -34,6 +34,8 @@ export interface UseDialogMachineOptions {
   onUnmounted?: () => void;
 }
 
+const initialCallbacks = {} as UseDialogMachineOptions;
+
 /**
  * 用於控制 `<dialog />` 的狀態機
  *
@@ -49,9 +51,9 @@ export interface UseDialogMachineOptions {
  * ```
  */
 export default function useDialogMachine(
-  callbacks: UseDialogMachineOptions = {},
+  callbacks: UseDialogMachineOptions = initialCallbacks,
 ) {
-  const callbacksRef = useRef(callbacks);
+  const callbacksRef = useRef<UseDialogMachineOptions>(callbacks);
   const phaseRef = useRef<DialogPhase>("unmounted");
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const observerRef = useRef<MutationObserver | null>(null);
@@ -68,8 +70,15 @@ export default function useDialogMachine(
     if (phaseRef.current === next) return;
 
     phaseRef.current = next;
-    const { onPhaseChange, onOpening, onClosing, onOpened, onClosed } =
-      callbacksRef.current;
+
+    const {
+      onPhaseChange,
+      onOpening,
+      onClosing,
+      onOpened,
+      onClosed,
+      onUnmounted,
+    } = callbacksRef.current;
 
     onPhaseChange?.(next);
 
@@ -86,8 +95,35 @@ export default function useDialogMachine(
       case "closed":
         onClosed?.();
         break;
+      case "unmounted":
+        onUnmounted?.();
+        break;
+      default:
+        break;
     }
   }, []);
+
+  /** 卸載所有監聽器以及元素 */
+  const onClean = useCallback(() => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+
+    if (dialogRef.current) {
+      dialogRef.current = null;
+    }
+
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+
+    setPhase("unmounted");
+  }, [setPhase]);
+
+  // 組件卸載清除
+  useEffect(() => onClean, [onClean]);
 
   /** 監控 open 屬性變化 */
   const handleMutation = useCallback(
@@ -128,32 +164,6 @@ export default function useDialogMachine(
     },
     [setPhase],
   );
-
-  /** 卸載所有監聽器以及元素 */
-  const onClean = useCallback(() => {
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-      observerRef.current = null;
-    }
-
-    if (dialogRef.current) {
-      dialogRef.current = null;
-    }
-
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-
-    if (phaseRef.current !== "unmounted") {
-      setPhase("unmounted");
-      callbacksRef.current.onUnmounted?.();
-    }
-  }, [setPhase]);
-
-  useEffect(() => {
-    return onClean;
-  }, [onClean]);
 
   /** 綁定 dialog 元素 */
   const ref = useCallback(
