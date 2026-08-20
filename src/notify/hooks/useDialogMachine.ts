@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 /**
  * dialog 的階段
@@ -103,15 +103,11 @@ export default function useDialogMachine(
     }
   }, []);
 
-  /** 卸載所有監聽器以及元素 */
+  /** 卸載所有監聽器 */
   const onClean = useCallback(() => {
     if (observerRef.current) {
       observerRef.current.disconnect();
       observerRef.current = null;
-    }
-
-    if (dialogRef.current) {
-      dialogRef.current = null;
     }
 
     if (rafRef.current) {
@@ -119,72 +115,64 @@ export default function useDialogMachine(
       rafRef.current = null;
     }
 
+    animationIdRef.current += 1;
     setPhase("unmounted");
   }, [setPhase]);
 
   // 組件卸載清除
   useEffect(() => onClean, [onClean]);
 
-  /** 監控 open 屬性變化 */
-  const handleMutation = useCallback(
-    (mutations: MutationRecord[]) => {
-      for (const mutation of mutations) {
-        if (
-          mutation.type === "attributes" &&
-          mutation.attributeName === "open"
-        ) {
-          const dialog = mutation.target as HTMLDialogElement;
+  // 同步 MutationObserver 到 dialogRef（支援條件掛載）
+  // 刻意不傳 deps：object ref 變更不會觸發 effect，需每次 commit 後對一次 current
+  useLayoutEffect(() => {
+    const element = dialogRef.current;
 
-          if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    if (element instanceof HTMLDialogElement) {
+      if (observerRef.current) return;
 
-          setPhase(dialog.open ? "opening" : "closing");
+      setPhase(element.open ? "opened" : "closed");
+      callbacksRef.current.onMounted?.();
 
-          // 第一幀 rAF 等待 layout
+      observerRef.current = new MutationObserver(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
+        setPhase(dialog.open ? "opening" : "closing");
+
+        // 第一幀 rAF 等待 layout
+        rafRef.current = requestAnimationFrame(() => {
+          const id = ++animationIdRef.current;
+
+          // 第二幀 rAF 等待 CSS animation/transition 建立
           rafRef.current = requestAnimationFrame(() => {
-            const id = ++animationIdRef.current;
+            if (animationIdRef.current !== id) return;
 
-            // 第二幀 rAF 等待 CSS animation/transition 建立
-            rafRef.current = requestAnimationFrame(() => {
-              const animations = dialog.getAnimations();
+            const animations = dialog.getAnimations({ subtree: true });
 
-              if (animations.length === 0) {
-                setPhase(dialog.open ? "opened" : "closed");
-              } else {
-                Promise.allSettled(
-                  animations.map((item) => item.finished),
-                ).then(() => {
+            if (animations.length === 0) {
+              setPhase(dialog.open ? "opened" : "closed");
+            } else {
+              Promise.allSettled(animations.map((item) => item.finished)).then(
+                () => {
                   if (animationIdRef.current !== id) return;
                   setPhase(dialog.open ? "opened" : "closed");
-                });
-              }
-            });
+                },
+              );
+            }
           });
-        }
-      }
-    },
-    [setPhase],
-  );
-
-  /** 綁定 dialog 元素 */
-  const ref = useCallback(
-    (element: HTMLDialogElement | null) => {
-      onClean();
-
-      if (element instanceof HTMLDialogElement) {
-        dialogRef.current = element;
-
-        setPhase(element.open ? "opened" : "closed");
-        callbacksRef.current.onMounted?.();
-
-        observerRef.current = new MutationObserver(handleMutation);
-        observerRef.current.observe(element, {
-          attributes: true,
-          attributeFilter: ["open"],
         });
-      }
-    },
-    [handleMutation, setPhase, onClean],
-  );
+      });
+      observerRef.current.observe(element, {
+        attributes: true,
+        attributeFilter: ["open"],
+      });
+      return;
+    }
+
+    if (observerRef.current) onClean();
+  });
 
   /** 切換 dialog 開關 */
   const toggle = useCallback((next?: boolean) => {
@@ -205,15 +193,12 @@ export default function useDialogMachine(
   /** 取得 dialog 當前階段 */
   const getPhase = useCallback(() => phaseRef.current, []);
 
-  return useMemo(
-    () => ({
-      /** 切換 dialog 開關 */
-      toggle,
-      /** 綁定 dialog 元素 */
-      ref,
-      /** 取得 dialog 當前階段 */
-      getPhase,
-    }),
-    [toggle, ref, getPhase],
-  );
+  return {
+    /** 切換 dialog 開關 */
+    toggle,
+    /** 綁定 dialog 元素 */
+    ref: dialogRef,
+    /** 取得 dialog 當前階段 */
+    getPhase,
+  };
 }
