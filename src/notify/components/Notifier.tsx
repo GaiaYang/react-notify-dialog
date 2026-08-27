@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useLayoutEffect, useRef, useState } from "react";
 import type { NotifyInternal } from "../types";
 
 import { CONFIRM_BUTTON } from "../constants";
@@ -28,17 +28,43 @@ export default memo(function Notifier() {
   const notifyId = notify?.id;
   const cancelable = notify?.options?.cancelable;
 
-  const [visibleNotify, setVisibleNotify] = useState<NotifyInternal | null>(
-    null,
-  );
+  // 離場期間保留內容；進場時在同一次 render 寫入，避免額外 setState
+  const visibleRef = useRef<NotifyInternal | null>(null);
+  const [, rerender] = useState(0);
+
+  if (notify && !visibleRef.current) {
+    visibleRef.current = notify;
+  }
+
+  const visibleNotify = visibleRef.current;
   const visibleNotifyId = visibleNotify?.id;
 
   const { toggle, ref, getPhase } = useDialogMachine({
     onPhaseChange,
     onClosed() {
-      setVisibleNotify(null);
+      if (!visibleRef.current) return;
+      visibleRef.current = null;
+      rerender((n) => n + 1);
     },
   });
+
+  // 內容 commit 後再開／關，進場時內容會跟著動畫一起出現
+  useLayoutEffect(() => {
+    if (!visibleNotifyId) return;
+
+    if (notifyId === visibleNotifyId) {
+      const phase = getPhase();
+      if (phase === "closed" || phase === "unmounted") {
+        toggle(true);
+      }
+      return;
+    }
+
+    const phase = getPhase();
+    if (phase === "opened" || phase === "opening") {
+      toggle(false);
+    }
+  }, [notifyId, visibleNotifyId, toggle, getPhase]);
 
   const onKeyDown: React.KeyboardEventHandler<HTMLDialogElement> = useCallback(
     (event) => {
@@ -57,18 +83,6 @@ export default memo(function Notifier() {
     },
     [notifyId, cancelable],
   );
-
-  if (!visibleNotify && notify) {
-    // visibleNotify 清空後才設定新通知並開啟 dialog
-    setVisibleNotify(notify);
-    toggle(true);
-  } else if (notifyId !== visibleNotifyId) {
-    // 當通知 ID 變化且 dialog 開啟中，先關閉舊通知
-    const phase = getPhase();
-    if (phase === "opened" || phase === "opening") {
-      toggle(false);
-    }
-  }
 
   function renderContent() {
     if (!visibleNotify) return null;

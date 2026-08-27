@@ -130,7 +130,8 @@ export default function useDialogMachine(
     if (element instanceof HTMLDialogElement) {
       if (observerRef.current) return;
 
-      setPhase(element.open ? "opened" : "closed");
+      // 初次同步階段，不觸發 onClosed / onOpened（避免掛載時誤清內容）
+      phaseRef.current = element.open ? "opened" : "closed";
       callbacksRef.current.onMounted?.();
 
       observerRef.current = new MutationObserver(() => {
