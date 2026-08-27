@@ -8,14 +8,11 @@ import { store, type NotifyState } from "../store";
 import { notify as notifyApi } from "../actions";
 import { useStoreSelector } from "../react";
 
-import useDialogMachine, { type DialogPhase } from "../hooks/useDialogMachine";
+import { useDialogMachine, type DialogPhase } from "@/dialog";
 
+import type { NotifierComponents } from "./types";
+import { defaultComponents } from "./defaults";
 import ActionButton from "./ActionButton";
-import Dialog from "./Dialog";
-import DialogContent from "./DialogContent";
-import DialogTitle from "./DialogTitle";
-import DialogDescription from "./DialogDescription";
-import DialogFooter from "./DialogFooter";
 
 function onPhaseChange(phase: DialogPhase) {
   store.setState({ isAnimating: phase === "opening" || phase === "closing" });
@@ -26,7 +23,16 @@ function selectLatestNotify(state: NotifyState) {
   return state.notifies.at(-1) ?? null;
 }
 
-export default memo(function Notifier() {
+export interface NotifierProps {
+  /** 覆寫 UI；未提供的欄位使用無樣式原生元素 */
+  components?: Partial<NotifierComponents>;
+}
+
+export default memo(function Notifier({ components }: NotifierProps) {
+  const { Dialog, Content, Title, Description, Footer, Button } = {
+    ...defaultComponents,
+    ...components,
+  };
   const current = useStoreSelector(selectLatestNotify);
   const notifyId = current?.id;
   const cancelable = current?.options?.cancelable;
@@ -94,28 +100,34 @@ export default memo(function Notifier() {
 
     return (
       <>
-        {title && <DialogTitle>{title}</DialogTitle>}
-        {message && <DialogDescription>{message}</DialogDescription>}
-        <DialogFooter>
+        {title && <Title>{title}</Title>}
+        {message && <Description>{message}</Description>}
+        <Footer>
           {!Array.isArray(buttons) || buttons.length === 0 ? (
             <ActionButton
               {...CONFIRM_BUTTON}
               key={CONFIRM_BUTTON.id}
               notifyId={id}
+              Button={Button}
             />
           ) : (
             buttons.map((item) => (
-              <ActionButton {...item} key={item.id} notifyId={id} />
+              <ActionButton
+                {...item}
+                key={item.id}
+                notifyId={id}
+                Button={Button}
+              />
             ))
           )}
-        </DialogFooter>
+        </Footer>
       </>
     );
   }
 
   return (
     <Dialog ref={ref} onKeyDown={onKeyDown}>
-      <DialogContent>{renderContent()}</DialogContent>
+      <Content>{renderContent()}</Content>
     </Dialog>
   );
 });

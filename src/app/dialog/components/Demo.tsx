@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 
-import useDialogMachine, {
-  type DialogPhase,
-} from "@/notify/hooks/useDialogMachine";
+import { useDialogMachine, type DialogPhase } from "@/dialog";
 
 const MODAL_ID = "modal_1";
 

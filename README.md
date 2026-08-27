@@ -6,11 +6,11 @@
 
 ## 安裝依賴
 
-此組件僅依賴一個 UI library：
+此組件不綁定特定 UI library。範例專案提供可複製的 daisyUI 皮膚：
 
-- [DaisyUI](https://daisyui.com/docs/install/)
+- 範例：[`src/examples/notify-daisyui`](./src/examples/notify-daisyui)（[DaisyUI](https://daisyui.com/docs/install/)）
 
-> 如需替換 UI，請參考 [`notify/components`](./src/notify/components/README.md)
+> 替換 UI 請參考 [`notify/components`](./src/notify/components/README.md)
 
 ## 啟動範例專案
 
@@ -29,6 +29,7 @@ pnpm dev
 
 ```tsx
 import { Notifier } from "@/notify";
+import { daisyui } from "@/examples/notify-daisyui";
 
 export default function RootLayout({
   children,
@@ -39,7 +40,7 @@ export default function RootLayout({
     <html>
       <body>
         {children}
-        <Notifier />
+        <Notifier components={daisyui} />
       </body>
     </html>
   );

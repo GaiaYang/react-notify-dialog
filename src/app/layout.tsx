@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import { Notifier } from "@/notify";
+import { daisyui } from "@/examples/notify-daisyui";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,7 +33,7 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           {children}
-          <Notifier />
+          <Notifier components={daisyui} />
         </body>
       </html>
     </StrictMode>
