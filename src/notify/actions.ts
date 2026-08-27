@@ -1,9 +1,4 @@
-import type {
-  Notify,
-  NotifyButton,
-  NotifyButtonInternal,
-  NotifyInternal,
-} from "./types";
+import type { Notify, NotifyButton, NotifyInternal } from "./types";
 
 import { store } from "./store";
 import { CONFIRM_BUTTON, CANCEL_BUTTON, DEFAULT_NOTIFY } from "./constants";
@@ -67,10 +62,17 @@ export const notify = {
     });
     return id;
   },
-  /** 顯示非同步確認通知 */
+  /** 顯示非同步確認通知；Esc / dismiss 視為取消（false） */
   confirmAsync(message: Notify["message"], title?: Notify["title"]) {
     const id = generateId();
     return new Promise<boolean>((resolve) => {
+      let settled = false;
+      const settle = (value: boolean) => {
+        if (settled) return;
+        settled = true;
+        resolve(value);
+      };
+
       store.dispatch({
         type: "ADD",
         payload: createNotify({
@@ -81,29 +83,38 @@ export const notify = {
             {
               ...CANCEL_BUTTON,
               onClick() {
-                resolve(false);
+                settle(false);
               },
             },
             {
               ...CONFIRM_BUTTON,
               onClick() {
-                resolve(true);
+                settle(true);
               },
             },
           ],
+          onDismiss() {
+            settle(false);
+          },
         }),
       });
     });
   },
   /** 關閉通知 */
   dismiss(id: string) {
+    const target = store.getSnapshot().notifies.find((n) => n.id === id);
+    if (!target) return;
+
     store.dispatch({ type: "REMOVE", payload: { id } });
+    target.onDismiss?.();
   },
 };
 
 /** 建立完整的通知物件 */
 function createNotify(
-  payload: Partial<Notify> & Pick<NotifyInternal, "id">,
+  payload: Partial<Notify> &
+    Pick<NotifyInternal, "id"> &
+    Pick<Partial<NotifyInternal>, "onDismiss">,
 ): NotifyInternal {
   return {
     ...DEFAULT_NOTIFY,
@@ -111,7 +122,7 @@ function createNotify(
     buttons:
       payload.buttons?.map((item) => ({
         ...item,
-        id: (item as unknown as NotifyButtonInternal).id || generateId(),
+        id: item.id || generateId(),
       })) ?? DEFAULT_NOTIFY.buttons,
     options: { ...DEFAULT_NOTIFY.options, ...payload.options },
   };

@@ -4,11 +4,11 @@ import { memo, useCallback, useLayoutEffect, useRef, useState } from "react";
 import type { NotifyInternal } from "../types";
 
 import { CONFIRM_BUTTON } from "../constants";
-import { store } from "../store";
+import { store, type NotifyState } from "../store";
+import { notify as notifyApi } from "../actions";
 import { useStoreSelector } from "../react";
 
 import useDialogMachine, { type DialogPhase } from "../hooks/useDialogMachine";
-import useShallow from "../hooks/useShallow";
 
 import ActionButton from "./ActionButton";
 import Dialog from "./Dialog";
@@ -21,19 +21,22 @@ function onPhaseChange(phase: DialogPhase) {
   store.setState({ isAnimating: phase === "opening" || phase === "closing" });
 }
 
+/** 顯示最新一則（stack：後進先看） */
+function selectLatestNotify(state: NotifyState) {
+  return state.notifies.at(-1) ?? null;
+}
+
 export default memo(function Notifier() {
-  const notify = useStoreSelector(
-    useShallow((state) => state.notifies.at(-1) ?? null),
-  );
-  const notifyId = notify?.id;
-  const cancelable = notify?.options?.cancelable;
+  const current = useStoreSelector(selectLatestNotify);
+  const notifyId = current?.id;
+  const cancelable = current?.options?.cancelable;
 
   // 離場期間保留內容；進場時在同一次 render 寫入，避免額外 setState
   const visibleRef = useRef<NotifyInternal | null>(null);
   const [, rerender] = useState(0);
 
-  if (notify && !visibleRef.current) {
-    visibleRef.current = notify;
+  if (current && !visibleRef.current) {
+    visibleRef.current = current;
   }
 
   const visibleNotify = visibleRef.current;
@@ -78,7 +81,7 @@ export default memo(function Notifier() {
       }
 
       if (notifyId) {
-        store.dispatch({ type: "REMOVE", payload: { id: notifyId } });
+        notifyApi.dismiss(notifyId);
       }
     },
     [notifyId, cancelable],

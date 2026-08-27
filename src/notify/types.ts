@@ -17,6 +17,8 @@ export interface NotifyButton {
   onClick?: DOMAttributes<HTMLButtonElement>["onClick"];
   /** 按鈕樣式 */
   style?: NotifyButtonStyle;
+  /** 按鈕 id（未提供則自動產生） */
+  id?: string;
 }
 
 /** 通知 */
@@ -50,4 +52,6 @@ export interface NotifyInternal extends Omit<Notify, "buttons"> {
   id: string;
   /** 通知按鈕 */
   buttons?: NotifyButtonInternal[];
+  /** Esc / dismiss 時呼叫（不經由按鈕） */
+  onDismiss?: () => void;
 }

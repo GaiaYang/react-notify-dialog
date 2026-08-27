@@ -1,8 +1,7 @@
 import type { NotifyInternal } from "./types";
-import { shallow } from "./utils/shallow";
 
 export interface NotifyState {
-  /** 通知列隊 */
+  /** 通知列隊（最新在尾端；UI 顯示 at(-1)） */
   notifies: NotifyInternal[];
   /** dialog 是否正在動畫中 */
   isAnimating: boolean;
@@ -21,68 +20,27 @@ const listeners: Set<() => void> = new Set();
 /** 動作類型定義 */
 export type NotifyAction =
   | { type: "ADD"; payload: NotifyInternal }
-  | { type: "REMOVE"; payload: { id: string } }
-  | {
-      type: "UPDATE";
-      payload: { id: string; update: Partial<NotifyInternal> };
-    }
-  | { type: "CLEAR" };
+  | { type: "REMOVE"; payload: { id: string } };
 
-/** 統一處理狀態變化 */
+/** 統一處理狀態變化；無變更時回傳原 state */
 function reducer(state: NotifyState, action: NotifyAction): NotifyState {
-  const nextState = { ...state };
-
   switch (action.type) {
     case "ADD": {
       const notify = action.payload;
       if (!notify.id || state.notifies.some((n) => n.id === notify.id)) {
-        nextState.notifies = state.notifies;
-      } else {
-        nextState.notifies = [...state.notifies, notify];
+        return state;
       }
-      break;
+      return { ...state, notifies: [...state.notifies, notify] };
     }
     case "REMOVE": {
       const { id } = action.payload;
-      const newArray: NotifyInternal[] = [];
-      let found = false;
-      for (const item of state.notifies) {
-        if (item.id === id) {
-          found = true;
-          continue;
-        }
-        newArray.push(item);
-      }
-      nextState.notifies = found ? newArray : state.notifies;
-      break;
-    }
-    case "UPDATE": {
-      const { id, update } = action.payload;
-      const newArray = state.notifies.slice();
-      let updated = false;
-      for (let i = 0; i < newArray.length; i++) {
-        const item = newArray[i];
-        if (item.id === id) {
-          const merged = { ...item, ...update };
-          if (!shallow(item, merged)) {
-            newArray[i] = merged;
-            updated = true;
-          }
-          break;
-        }
-      }
-      nextState.notifies = updated ? newArray : state.notifies;
-      break;
-    }
-    case "CLEAR": {
-      nextState.notifies = state.notifies.length > 0 ? [] : state.notifies;
-      break;
+      const notifies = state.notifies.filter((n) => n.id !== id);
+      if (notifies.length === state.notifies.length) return state;
+      return { ...state, notifies };
     }
     default:
-      break;
+      return state;
   }
-
-  return nextState;
 }
 
 export const store = {
@@ -96,33 +54,28 @@ export const store = {
     listeners.add(listener);
     return () => listeners.delete(listener);
   },
-  // 外部用函式
   /** 更新通知 */
   dispatch(action: NotifyAction) {
     updateState(reducer(state, action));
   },
   /** 更新狀態 */
   setState(
-    partial:
-      | Partial<NotifyState>
-      | ((prev: Partial<NotifyState>) => NotifyState),
+    partial: Partial<NotifyState> | ((prev: NotifyState) => NotifyState),
   ) {
     const nextState =
-      typeof partial === "function"
-        ? (partial as (state: NotifyState) => NotifyState)(state)
-        : partial;
+      typeof partial === "function" ? partial(state) : { ...state, ...partial };
     updateState(nextState);
   },
 };
 
-function updateState(nextState: Partial<NotifyState>) {
-  if (!Object.is(nextState, state)) {
-    state = {
-      ...state,
-      ...nextState,
-    };
-    emitChange();
-  }
+function updateState(nextState: NotifyState | Partial<NotifyState>) {
+  if (Object.is(nextState, state)) return;
+
+  state = {
+    ...state,
+    ...nextState,
+  };
+  emitChange();
 }
 
 /** 觸發監聽器 */

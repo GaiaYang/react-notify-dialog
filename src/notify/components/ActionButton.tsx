@@ -29,9 +29,11 @@ export default function ActionButton({
       type="button"
       buttonStyle={style}
       onClick={(...arg) => {
-        Promise.resolve(onClick?.(...arg)).then(() => {
-          notify.dismiss(notifyId);
-        });
+        Promise.resolve()
+          .then(() => onClick?.(...arg))
+          .finally(() => {
+            notify.dismiss(notifyId);
+          });
       }}
       disabled={isAnimating}
     >
